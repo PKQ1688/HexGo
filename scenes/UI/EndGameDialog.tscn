@@ -1,6 +1,70 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/EndGameController.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.10, 0.12, 0.18, 0.97)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_left = 16
+corner_radius_bottom_right = 16
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.34, 0.52, 0.70)
+content_margin_left = 30.0
+content_margin_top = 26.0
+content_margin_right = 30.0
+content_margin_bottom = 26.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.16, 0.20, 0.30, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.40, 0.58, 0.75)
+content_margin_left = 20.0
+content_margin_top = 9.0
+content_margin_right = 20.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.22, 0.28, 0.42, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.52, 0.74, 0.90)
+content_margin_left = 20.0
+content_margin_top = 9.0
+content_margin_right = 20.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+bg_color = Color(0.12, 0.16, 0.24, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.36, 0.52, 0.70)
+content_margin_left = 21.0
+content_margin_top = 10.0
+content_margin_right = 19.0
+content_margin_bottom = 8.0
 
 [node name="EndGameDialog" type="Control"]
 visible = false
@@ -16,7 +80,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.04, 0.05, 0.08, 0.55)
+color = Color(0.04, 0.05, 0.08, 0.68)
 
 [node name="PanelContainer" type="PanelContainer" parent="Overlay"]
 layout_mode = 1
@@ -25,29 +89,47 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -180.0
-offset_top = -120.0
-offset_right = 180.0
-offset_bottom = 120.0
+offset_left = -200.0
+offset_top = -130.0
+offset_right = 200.0
+offset_bottom = 130.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Overlay/PanelContainer"]
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
 [node name="ResultTitle" type="Label" parent="Overlay/PanelContainer/VBoxContainer"]
 horizontal_alignment = 1
 text = "对局结束"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
+
+[node name="Sep" type="ColorRect" parent="Overlay/PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 1)
+color = Color(0.25, 0.30, 0.46, 0.40)
 
 [node name="ScoreDetail" type="Label" parent="Overlay/PanelContainer/VBoxContainer"]
 autowrap_mode = 3
 text = "黑方：0\n白方：0"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.72, 0.76, 0.88, 1)
 
 [node name="ButtonRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
 alignment = 1
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
 [node name="RestartButton" type="Button" parent="Overlay/PanelContainer/VBoxContainer/ButtonRow"]
 text = "重新开始"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_colors/font_color = Color(0.75, 0.82, 0.96, 1)
+theme_override_font_sizes/font_size = 14
 
 [node name="QuitButton" type="Button" parent="Overlay/PanelContainer/VBoxContainer/ButtonRow"]
 text = "退出"
-
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_colors/font_color = Color(0.75, 0.82, 0.96, 1)
+theme_override_font_sizes/font_size = 14

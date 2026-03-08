@@ -6,14 +6,14 @@
 script = ExtResource("1")
 
 [node name="Background" type="Polygon2D" parent="."]
-color = Color(0.94, 0.88, 0.70, 1)
+color = Color(0.82, 0.67, 0.38, 1)
 
 [node name="Border" type="Line2D" parent="."]
-width = 2.0
-default_color = Color(0.62, 0.50, 0.33, 1)
+width = 1.5
+default_color = Color(0.32, 0.20, 0.08, 1)
 closed = false
 
 [node name="Highlight" type="Polygon2D" parent="."]
 visible = false
-color = Color(0.22, 0.78, 0.43, 0.35)
+color = Color(0.30, 0.92, 0.50, 0.36)
 

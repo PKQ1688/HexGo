@@ -22,4 +22,4 @@ func set_highlight_state(is_visible: bool, is_valid: bool) -> void:
 	highlight.visible = is_visible
 	if not is_visible:
 		return
-	highlight.color = Color(0.22, 0.78, 0.43, 0.35) if is_valid else Color(0.86, 0.27, 0.23, 0.35)
+	highlight.color = Color(0.30, 0.92, 0.50, 0.38) if is_valid else Color(0.95, 0.22, 0.18, 0.38)

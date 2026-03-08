@@ -40,7 +40,7 @@ func set_player_territory(coords: Array, player: int) -> void:
 		var overlay := Polygon2D.new()
 		overlay.polygon = _build_hexagon_points(layout.hex_size - 5.0)
 		overlay.position = layout.cube_to_pixel(coord)
-		overlay.color = Color(0.16, 0.38, 0.83, 0.22) if player == 0 else Color(0.92, 0.71, 0.11, 0.24)
+		overlay.color = Color(0.18, 0.45, 0.95, 0.30) if player == 0 else Color(0.95, 0.72, 0.12, 0.32)
 		overlay_container.add_child(overlay)
 		player_nodes[key] = overlay
 

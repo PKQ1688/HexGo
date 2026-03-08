@@ -10,20 +10,33 @@ func _ready() -> void:
 	var main_polygon := _build_circle(radius)
 	circle.polygon = main_polygon
 
-	var shadow_polygon := _build_circle(radius * 1.02)
+	var shadow_polygon := _build_circle(radius * 1.05)
 	shadow.polygon = shadow_polygon
-	shadow.position = Vector2(2, 3)
+	shadow.position = Vector2(2.5, 4)
+
+	# Gloss highlight overlay for a polished stone look
+	var gloss := Polygon2D.new()
+	gloss.name = "Gloss"
+	add_child(gloss)
+	gloss.polygon = _build_circle(radius * 0.44, 14)
+	gloss.position = Vector2(-radius * 0.20, -radius * 0.24)
+	gloss.color = Color(1.0, 1.0, 1.0, 0.15)
 
 
 func set_player(player: int) -> void:
 	var shadow: Polygon2D = $Shadow
 	var circle: Polygon2D = $Circle
+	var gloss = get_node_or_null("Gloss")
 	if player == 0:
-		circle.color = Color(0.10, 0.10, 0.14)
-		shadow.color = Color(0.0, 0.0, 0.0, 0.18)
+		circle.color = Color(0.09, 0.09, 0.12)
+		shadow.color = Color(0.0, 0.0, 0.0, 0.28)
+		if gloss:
+			gloss.color = Color(1.0, 1.0, 1.0, 0.12)
 	else:
-		circle.color = Color(0.95, 0.97, 0.99)
-		shadow.color = Color(0.0, 0.0, 0.0, 0.12)
+		circle.color = Color(0.97, 0.96, 0.94)
+		shadow.color = Color(0.0, 0.0, 0.0, 0.16)
+		if gloss:
+			gloss.color = Color(1.0, 1.0, 1.0, 0.38)
 
 
 func set_dead_marked(is_dead: bool) -> void:
