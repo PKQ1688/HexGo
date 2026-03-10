@@ -1,6 +1,7 @@
 class_name BoardRenderer
 extends Node2D
 
+const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const HexCellScene = preload("res://scenes/HexCell.tscn")
 
 var board = null
@@ -27,7 +28,9 @@ func update_hover(coord, is_valid: bool) -> void:
 
 	var key: String = coord.to_key()
 	if cell_nodes.has(key):
-		cell_nodes[key].set_highlight_state(true, is_valid)
+		var cell_state: int = board.get_cell(coord)
+		var is_inspect := cell_state != HexBoardRef.CellState.EMPTY
+		cell_nodes[key].set_highlight_state(true, is_valid, is_inspect)
 		hovered_key = key
 
 

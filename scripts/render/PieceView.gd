@@ -22,6 +22,37 @@ func _ready() -> void:
 	gloss.position = Vector2(-radius * 0.20, -radius * 0.24)
 	gloss.color = Color(1.0, 1.0, 1.0, 0.15)
 
+	var dead_ring := Line2D.new()
+	dead_ring.name = "DeadRing"
+	dead_ring.width = 2.8
+	dead_ring.default_color = Color(1.0, 0.45, 0.40, 0.96)
+	dead_ring.closed = true
+	dead_ring.points = _build_circle(radius * 0.90, 28)
+	dead_ring.visible = false
+	add_child(dead_ring)
+
+	var dead_cross_a := Line2D.new()
+	dead_cross_a.name = "DeadCrossA"
+	dead_cross_a.width = 3.0
+	dead_cross_a.default_color = Color(1.0, 0.40, 0.36, 0.94)
+	dead_cross_a.points = PackedVector2Array([
+		Vector2(-radius * 0.52, -radius * 0.52),
+		Vector2(radius * 0.52, radius * 0.52),
+	])
+	dead_cross_a.visible = false
+	add_child(dead_cross_a)
+
+	var dead_cross_b := Line2D.new()
+	dead_cross_b.name = "DeadCrossB"
+	dead_cross_b.width = 3.0
+	dead_cross_b.default_color = dead_cross_a.default_color
+	dead_cross_b.points = PackedVector2Array([
+		Vector2(radius * 0.52, -radius * 0.52),
+		Vector2(-radius * 0.52, radius * 0.52),
+	])
+	dead_cross_b.visible = false
+	add_child(dead_cross_b)
+
 
 func set_player(player: int) -> void:
 	var shadow: Polygon2D = $Shadow
@@ -42,14 +73,23 @@ func set_player(player: int) -> void:
 func set_dead_marked(is_dead: bool) -> void:
 	var circle: Polygon2D = $Circle
 	var shadow: Polygon2D = $Shadow
+	var dead_ring: Line2D = $DeadRing
+	var dead_cross_a: Line2D = $DeadCrossA
+	var dead_cross_b: Line2D = $DeadCrossB
 	if is_dead:
-		modulate = Color(1.0, 0.72, 0.72, 0.58)
-		circle.scale = Vector2(0.88, 0.88)
-		shadow.modulate = Color(1.0, 0.4, 0.4, 0.6)
+		modulate = Color(1.0, 0.78, 0.78, 0.72)
+		circle.scale = Vector2(0.84, 0.84)
+		shadow.modulate = Color(1.0, 0.36, 0.36, 0.7)
+		dead_ring.visible = true
+		dead_cross_a.visible = true
+		dead_cross_b.visible = true
 	else:
 		modulate = Color(1, 1, 1, 1)
 		circle.scale = Vector2.ONE
 		shadow.modulate = Color(1, 1, 1, 1)
+		dead_ring.visible = false
+		dead_cross_a.visible = false
+		dead_cross_b.visible = false
 
 
 func play_place_animation() -> void:

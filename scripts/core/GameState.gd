@@ -6,6 +6,7 @@ const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const ScoreCalculatorRef = preload("res://scripts/core/ScoreCalculator.gd")
 const TerritoryResolverRef = preload("res://scripts/core/TerritoryResolver.gd")
+const TurnSimulatorRef = preload("res://scripts/core/TurnSimulator.gd")
 
 signal board_initialized(board)
 signal piece_placed(coord, player)
@@ -53,7 +54,7 @@ func setup_game(radius: int = board_radius) -> void:
 	move_history.clear()
 	marked_dead_stones.clear()
 	previous_board_signature = ""
-	current_board_signature = _board_signature(board)
+	current_board_signature = TurnSimulatorRef.board_signature(board)
 	resume_player_after_scoring = Player.BLACK
 	_update_scores()
 	_emit_scoring_preview()
@@ -70,13 +71,20 @@ func record_pass() -> void:
 	if phase != Phase.WAITING:
 		return
 
-	consecutive_passes += 1
+	var result := TurnSimulatorRef.simulate_pass(
+		board,
+		current_player,
+		current_board_signature,
+		consecutive_passes,
+		marked_dead_stones
+	)
+	consecutive_passes = int(result["consecutive_passes"])
 	move_history.append({
 		"type": "pass",
 		"player": current_player,
 	})
 
-	if consecutive_passes >= 2:
+	if result["ended_by_double_pass"]:
 		_enter_scoring_phase()
 		return
 
@@ -93,7 +101,13 @@ func can_place_at(coord: HexCoordRef) -> bool:
 		return false
 	if board.get_cell(coord) != HexBoardRef.CellState.EMPTY:
 		return false
-	return _is_move_legal(board, coord, current_player)
+	return bool(TurnSimulatorRef.simulate_place(
+		board,
+		current_player,
+		previous_board_signature,
+		current_board_signature,
+		coord
+	)["legal"])
 
 
 func execute_turn(coord: HexCoordRef) -> bool:
@@ -102,26 +116,28 @@ func execute_turn(coord: HexCoordRef) -> bool:
 	if not can_place_at(coord):
 		return false
 
+	var result := TurnSimulatorRef.simulate_place(
+		board,
+		current_player,
+		previous_board_signature,
+		current_board_signature,
+		coord
+	)
+	if not result["legal"]:
+		return false
+
 	phase = Phase.PLACING
-	var piece_state := _player_to_piece_state(current_player)
-	board.set_cell(coord, piece_state)
 	piece_placed.emit(coord, current_player)
 
 	phase = Phase.RESOLVING_CAPTURE
-	var captured := CaptureResolverRef.resolve(board, piece_state)
+	var captured: Array = result["captured"]
 	if not captured.is_empty():
-		for captured_coord in captured:
-			board.set_cell(captured_coord, HexBoardRef.CellState.EMPTY)
 		pieces_captured.emit(captured)
 
-	var self_group := CaptureResolverRef.find_group(board, coord, piece_state)
-	if not self_group.is_empty() and CaptureResolverRef.get_liberties(board, self_group) == 0:
-		board.set_cell(coord, HexBoardRef.CellState.EMPTY)
-		phase = Phase.WAITING
-		return false
+	_apply_board_state(result["board"])
 
 	phase = Phase.RESOLVING_TERRITORY
-	var territory_map := TerritoryResolverRef.resolve_all(board)
+	var territory_map: Dictionary = result["territory_map"]
 	var black_territory: Array = territory_map.get(HexBoardRef.CellState.BLACK, [])
 	var white_territory: Array = territory_map.get(HexBoardRef.CellState.WHITE, [])
 
@@ -139,7 +155,7 @@ func execute_turn(coord: HexCoordRef) -> bool:
 	})
 
 	previous_board_signature = current_board_signature
-	current_board_signature = _board_signature(board)
+	current_board_signature = result["board_signature"]
 	switch_player()
 	phase = Phase.WAITING
 	_update_scores()
@@ -226,6 +242,20 @@ func get_scoring_board():
 	return ScoreCalculatorRef.build_scoring_board(board, marked_dead_stones)
 
 
+func build_turn_snapshot() -> Dictionary:
+	return {
+		"board": board.clone(),
+		"current_player": current_player,
+		"previous_board_signature": previous_board_signature,
+		"current_board_signature": current_board_signature,
+		"consecutive_passes": consecutive_passes,
+		"scores": scores.duplicate(true),
+		"score_breakdown": score_breakdown.duplicate(true),
+		"move_count": move_history.size(),
+		"board_radius": board_radius,
+	}
+
+
 func _enter_scoring_phase() -> void:
 	phase = Phase.SCORING
 	resume_player_after_scoring = _other_player(current_player)
@@ -256,25 +286,6 @@ func _player_to_piece_state(player: int) -> int:
 	return HexBoardRef.CellState.BLACK if player == Player.BLACK else HexBoardRef.CellState.WHITE
 
 
-func _is_move_legal(source_board: HexBoardRef, coord: HexCoordRef, player: int) -> bool:
-	var test_board = source_board.clone()
-	var piece_state := _player_to_piece_state(player)
-	test_board.set_cell(coord, piece_state)
-
-	var captured := CaptureResolverRef.resolve(test_board, piece_state)
-	for captured_coord in captured:
-		test_board.set_cell(captured_coord, HexBoardRef.CellState.EMPTY)
-
-	var self_group := CaptureResolverRef.find_group(test_board, coord, piece_state)
-	if self_group.is_empty():
-		return false
-	if CaptureResolverRef.get_liberties(test_board, self_group) <= 0:
-		return false
-
-	var next_signature := _board_signature(test_board)
-	return previous_board_signature == "" or next_signature != previous_board_signature
-
-
 func _emit_scoring_preview() -> void:
 	var preview_board = get_scoring_board()
 	var territory_map: Dictionary = TerritoryResolverRef.resolve_all(preview_board)
@@ -282,11 +293,12 @@ func _emit_scoring_preview() -> void:
 	territory_formed.emit(territory_map.get(HexBoardRef.CellState.WHITE, []), Player.WHITE)
 
 
-func _board_signature(target_board: HexBoardRef) -> String:
-	var tokens: PackedStringArray = []
-	for coord in target_board.all_coords:
-		tokens.append(str(target_board.get_cell(coord)))
-	return ",".join(tokens)
+func _apply_board_state(source_board: HexBoardRef) -> void:
+	board.board_radius = source_board.board_radius
+	board.cells = source_board.cells.duplicate(true)
+	board.all_coords.clear()
+	for coord in source_board.all_coords:
+		board.all_coords.append(coord.duplicated())
 
 
 func _duplicate_coords(coords: Array) -> Array:

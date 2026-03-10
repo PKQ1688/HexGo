@@ -8,6 +8,7 @@ var layout = null
 var board_root: Node2D = null
 var game_state = null
 var last_hovered_key: String = ""
+var input_enabled: bool = true
 
 
 func setup(layout_model, board_node: Node2D, state) -> void:
@@ -18,8 +19,17 @@ func setup(layout_model, board_node: Node2D, state) -> void:
 	set_process_unhandled_input(true)
 
 
+func set_input_enabled(enabled: bool) -> void:
+	input_enabled = enabled
+	if not enabled and last_hovered_key != "":
+		last_hovered_key = ""
+		cell_hovered.emit(null)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if layout == null or board_root == null or game_state == null:
+		return
+	if not input_enabled:
 		return
 
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -30,6 +40,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(_delta: float) -> void:
 	if layout == null or board_root == null or game_state == null:
+		return
+	if not input_enabled:
 		return
 
 	var coord = _coord_from_local(board_root.get_local_mouse_position())

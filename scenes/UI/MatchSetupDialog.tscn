@@ -1,0 +1,164 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/MatchSetupDialog.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.09, 0.14, 0.97)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_left = 18
+corner_radius_bottom_right = 18
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.80, 0.67, 0.37, 0.34)
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.48, 0.35, 0.15, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1.0, 0.88, 0.60, 0.72)
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_option"]
+bg_color = Color(0.15, 0.18, 0.26, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.46, 0.56, 0.76, 0.44)
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_option_hover"]
+bg_color = Color(0.20, 0.25, 0.36, 1.0)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.76, 0.86, 1.0, 0.66)
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[node name="MatchSetupDialog" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 1
+script = ExtResource("1")
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.03, 0.06, 0.78)
+
+[node name="PanelContainer" type="PanelContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -145.0
+offset_right = 200.0
+offset_bottom = 145.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Overlay/PanelContainer"]
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Overlay/PanelContainer/VBoxContainer"]
+text = "对局设置"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.97, 0.90, 0.72, 1)
+
+[node name="Description" type="Label" parent="Overlay/PanelContainer/VBoxContainer"]
+text = "选择黑白双方控制方式与 AI 难度。计分阶段仍由玩家手动确认。"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.73, 0.79, 0.89, 1)
+
+[node name="BlackRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
+theme_override_constants/separation = 12
+
+[node name="BlackLabel" type="Label" parent="Overlay/PanelContainer/VBoxContainer/BlackRow"]
+text = "黑方"
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.67, 0.85, 0.99, 1)
+
+[node name="BlackControl" type="OptionButton" parent="Overlay/PanelContainer/VBoxContainer/BlackRow"]
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_option")
+theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
+theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+
+[node name="WhiteRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
+theme_override_constants/separation = 12
+
+[node name="WhiteLabel" type="Label" parent="Overlay/PanelContainer/VBoxContainer/WhiteRow"]
+text = "白方"
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.98, 0.85, 0.55, 1)
+
+[node name="WhiteControl" type="OptionButton" parent="Overlay/PanelContainer/VBoxContainer/WhiteRow"]
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_option")
+theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
+theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+
+[node name="DifficultyRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
+theme_override_constants/separation = 12
+
+[node name="DifficultyLabel" type="Label" parent="Overlay/PanelContainer/VBoxContainer/DifficultyRow"]
+text = "AI 难度"
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.83, 0.88, 0.97, 1)
+
+[node name="Difficulty" type="OptionButton" parent="Overlay/PanelContainer/VBoxContainer/DifficultyRow"]
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_option")
+theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
+theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+
+[node name="StartButton" type="Button" parent="Overlay/PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 44)
+text = "开始对局"
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+theme_override_colors/font_color = Color(0.19, 0.13, 0.05, 1)
