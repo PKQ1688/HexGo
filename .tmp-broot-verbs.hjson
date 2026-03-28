@@ -1,0 +1,10 @@
+verbs: [
+    {
+        invocation: edit
+        shortcut: v
+        key: ctrl-o
+        apply_to: text_file
+        external: "code -g {file}:{line}"
+        leave_broot: false
+    }
+]
