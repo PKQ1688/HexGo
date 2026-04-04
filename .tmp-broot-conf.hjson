@@ -1,9 +1,0 @@
-default_flags: "g"
-terminal_title: "[broot] {git-name}"
-quit_on_last_cancel: true
-show_selection_mark: true
-
-search_modes: {
-    <empty>: fuzzy name
-    /: regex path
-}

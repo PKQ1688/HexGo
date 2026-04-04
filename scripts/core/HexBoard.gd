@@ -64,26 +64,6 @@ func get_empty_cells() -> Array[HexCoordRef]:
 	return result
 
 
-func get_coords_by_state(state: int) -> Array[HexCoordRef]:
-	var result: Array[HexCoordRef] = []
-	for coord in all_coords:
-		if get_cell(coord) == state:
-			result.append(coord)
-	return result
-
-
-func is_territory(coord: HexCoordRef) -> bool:
-	var state := get_cell(coord)
-	return state == CellState.TERRITORY_BLACK or state == CellState.TERRITORY_WHITE
-
-
-func clear_territories() -> void:
-	for coord in all_coords:
-		var state := get_cell(coord)
-		if state == CellState.TERRITORY_BLACK or state == CellState.TERRITORY_WHITE:
-			set_cell(coord, CellState.EMPTY)
-
-
 func clone():
 	var copy = new()
 	copy.initialize(board_radius)

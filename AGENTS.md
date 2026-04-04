@@ -4,7 +4,7 @@
 - `scenes/` contains playable scenes; `scenes/UI/` holds HUD and dialog scenes.
 - `scripts/core/` contains pure game rules and state management; keep it free of scene/node dependencies.
 - `scripts/render/`, `scripts/input/`, `scripts/ui/`, and `scripts/ai/` handle presentation, input, interface flow, and computer opponents.
-- `assets/` stores art, `resources/` stores themes and shaders, `tests/` stores headless test scripts, and `docs/superpowers/` stores design and planning notes.
+- `tests/` stores headless test scripts.
 - Treat `.godot/` as generated editor cache. Do not edit it or rely on it for source changes.
 
 ## Build, Test, and Development Commands
@@ -18,7 +18,7 @@
 - Match the existing style: tabs for indentation, concise functions, and small focused scripts.
 - Use PascalCase for scene/script filenames and `class_name`s (`GameState.gd`, `AIController.gd`); use `snake_case` for methods, variables, and signals (`record_pass`, `turn_completed`).
 - Preserve the project architecture: core logic stays in `scripts/core/`, while render/UI/input layers react through signals instead of mutating shared state directly.
-- No formatter or linter config is checked in, so keep `res://` paths, `.uid` files, and preload aliases consistent with nearby code.
+- No formatter or linter config is checked in, so keep `res://` paths and preload aliases consistent with nearby code.
 
 ## Testing Guidelines
 - Add or update a `tests/test_*.gd` case for every gameplay, scoring, capture, or AI behavior change.

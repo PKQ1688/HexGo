@@ -33,10 +33,6 @@ static func get_player_control(config: Dictionary, player: int) -> int:
 	return normalized["black_control"] if player == 0 else normalized["white_control"]
 
 
-static func control_label(control: int) -> String:
-	return "AI" if control == PlayerControl.AI else "玩家"
-
-
 static func difficulty_label(difficulty: int) -> String:
 	match difficulty:
 		AIDifficulty.EASY:

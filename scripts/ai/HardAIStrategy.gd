@@ -14,30 +14,27 @@ func choose_action(state_snapshot: Dictionary) -> Dictionary:
 	if AIHeuristicsRef.should_pass(state_snapshot, float(ranked[0]["score"])):
 		return {"type": "pass"}
 
-	var candidates: Array = []
 	var limit: int = min(top_k, ranked.size())
-	for index in range(limit):
-		candidates.append(ranked[index])
-
 	var depth: int = 2
-	if candidates.size() <= 4 and int(state_snapshot.get("move_count", 0)) >= 8:
+	if limit <= 4 and int(state_snapshot.get("move_count", 0)) >= 8:
 		depth = 3
 
 	var root_player: int = int(state_snapshot["current_player"])
 	var started_at: int = Time.get_ticks_msec()
 	var best_score: float = -INF
-	var best_action: Dictionary = candidates[0]["action"]
+	var best_coord = ranked[0]["action"]["coord"].duplicated()
 
-	for candidate in candidates:
+	for index in range(limit):
 		if Time.get_ticks_msec() - started_at >= time_budget_ms:
 			break
+		var candidate: Dictionary = ranked[index]
 		var next_snapshot: Dictionary = AIHeuristicsRef.build_next_snapshot(state_snapshot, candidate["result"], "move")
 		var score: float = _search(next_snapshot, root_player, depth - 1, -INF, INF, started_at)
 		if score > best_score:
 			best_score = score
-			best_action = candidate["action"]
+			best_coord = candidate["action"]["coord"].duplicated()
 
-	return best_action
+	return {"type": "move", "coord": best_coord}
 
 
 func _search(snapshot: Dictionary, root_player: int, depth: int, alpha: float, beta: float, started_at: int) -> float:
@@ -46,7 +43,7 @@ func _search(snapshot: Dictionary, root_player: int, depth: int, alpha: float, b
 	if Time.get_ticks_msec() - started_at >= time_budget_ms:
 		return AIHeuristicsRef.score_position(snapshot, root_player)
 
-	var ranked: Array = AIHeuristicsRef.rank_place_actions(snapshot, root_player)
+	var ranked: Array = AIHeuristicsRef.rank_place_actions(snapshot)
 	if ranked.is_empty():
 		var pass_result: Dictionary = AIHeuristicsRef.simulate_pass(snapshot)
 		var next_snapshot: Dictionary = AIHeuristicsRef.build_next_snapshot(snapshot, pass_result, "pass")

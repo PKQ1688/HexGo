@@ -165,10 +165,6 @@ func execute_turn(coord: HexCoordRef) -> bool:
 	return true
 
 
-func is_game_over() -> bool:
-	return phase == Phase.GAME_OVER
-
-
 func is_scoring_phase() -> bool:
 	return phase == Phase.SCORING
 
@@ -185,12 +181,6 @@ func get_visible_threats() -> Dictionary:
 			continue
 		visible_threats[key] = entry
 	return visible_threats
-
-
-func get_winner() -> int:
-	if scores[Player.BLACK] == scores[Player.WHITE]:
-		return -1
-	return Player.BLACK if scores[Player.BLACK] > scores[Player.WHITE] else Player.WHITE
 
 
 func can_toggle_dead_at(coord: HexCoordRef) -> bool:

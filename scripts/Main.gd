@@ -4,9 +4,6 @@ extends Node
 const AIControllerRef = preload("res://scripts/ai/AIController.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
 const GameStateRef = preload("res://scripts/core/GameState.gd")
-const BoardRef = preload("res://scripts/Board.gd")
-const EndGameControllerRef = preload("res://scripts/ui/EndGameController.gd")
-const HUDControllerRef = preload("res://scripts/ui/HUDController.gd")
 const MatchSetupDialogRef = preload("res://scripts/ui/MatchSetupDialog.gd")
 const HexLayout = preload("res://scripts/render/HexLayout.gd")
 
