@@ -35,10 +35,11 @@ func update_hover(coord, is_valid: bool) -> void:
 	influence_renderer.update_focus(coord, is_valid)
 
 
-func sync_from_board(board_model, scoring_board = null, marked_dead_keys: Array = []) -> void:
+func sync_from_board(board_model, scoring_board = null, marked_dead_keys: Array = [], visible_threats: Dictionary = {}) -> void:
 	update_hover(null, false)
 	piece_renderer.sync_from_board(board_model)
 	piece_renderer.set_dead_stones(marked_dead_keys)
+	piece_renderer.sync_threat_levels(visible_threats)
 	territory_renderer.sync_from_board(scoring_board if scoring_board != null else board_model)
 	influence_renderer.sync_from_board(board_model)
 

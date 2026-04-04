@@ -1,6 +1,8 @@
 class_name InfluenceRenderer
 extends Node2D
 
+signal preview_summary_changed(summary)
+
 const CaptureResolverRef = preload("res://scripts/core/CaptureResolver.gd")
 const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 
@@ -13,8 +15,6 @@ const INSPECT_TINT := Color(0.89, 0.94, 1.0, 1.0)
 var board = null
 var layout = null
 var game_state = null
-var heatmap_nodes: Dictionary = {}
-
 @onready var heatmap_container: Node2D = $Heatmap
 @onready var preview_container: Node2D = $Preview
 
@@ -28,13 +28,14 @@ func setup(board_model, layout_model, state) -> void:
 
 func sync_from_board(board_model) -> void:
 	board = board_model
-	_rebuild_heatmap()
+	_clear_heatmap()
 	clear_preview()
 
 
 func clear_preview() -> void:
 	for child in preview_container.get_children():
 		child.queue_free()
+	preview_summary_changed.emit({})
 
 
 func update_focus(coord, is_valid: bool) -> void:
@@ -54,65 +55,9 @@ func update_focus(coord, is_valid: bool) -> void:
 	_show_move_preview(coord, is_valid)
 
 
-func _rebuild_heatmap() -> void:
-	if board == null or layout == null:
-		return
-
-	var next_keys: Dictionary = {}
-	for coord in board.all_coords:
-		if board.get_cell(coord) != HexBoardRef.CellState.EMPTY:
-			continue
-
-		var influence := _calculate_influence(coord)
-		if abs(influence) < 0.16:
-			continue
-
-		var key: String = coord.to_key()
-		next_keys[key] = true
-		var overlay: Polygon2D = heatmap_nodes.get(key)
-		if overlay == null:
-			overlay = Polygon2D.new()
-			overlay.polygon = _build_hexagon_points(layout.hex_size - 10.0)
-			overlay.position = layout.cube_to_pixel(coord)
-			heatmap_container.add_child(overlay)
-			heatmap_nodes[key] = overlay
-
-		var alpha := clampf(0.05 + abs(influence) * 0.10, 0.05, 0.22)
-		var tint := BLACK_TINT if influence > 0.0 else WHITE_TINT
-		overlay.color = Color(tint.r, tint.g, tint.b, alpha)
-
-	for key: String in heatmap_nodes.keys():
-		if next_keys.has(key):
-			continue
-		heatmap_nodes[key].queue_free()
-		heatmap_nodes.erase(key)
-
-
-func _calculate_influence(target) -> float:
-	var black_score := 0.0
-	var white_score := 0.0
-
-	for coord in board.all_coords:
-		var state: int = board.get_cell(coord)
-		if state != HexBoardRef.CellState.BLACK and state != HexBoardRef.CellState.WHITE:
-			continue
-
-		var distance: int = target.distance(coord)
-		var weight := 0.0
-		match distance:
-			1:
-				weight = 1.0
-			2:
-				weight = 0.35
-			_:
-				continue
-
-		if state == HexBoardRef.CellState.BLACK:
-			black_score += weight
-		else:
-			white_score += weight
-
-	return black_score - white_score
+func _clear_heatmap() -> void:
+	for child in heatmap_container.get_children():
+		child.queue_free()
 
 
 func _show_group_preview(coord, piece_state: int) -> void:
@@ -129,6 +74,12 @@ func _show_group_preview(coord, piece_state: int) -> void:
 
 	for liberty in liberty_coords:
 		_add_liberty_marker(liberty, liberty_tint)
+
+	preview_summary_changed.emit({
+		"type": "group",
+		"player": piece_state,
+		"liberties": liberty_coords.size(),
+	})
 
 
 func _show_move_preview(coord, is_valid: bool) -> void:
@@ -158,6 +109,13 @@ func _show_move_preview(coord, is_valid: bool) -> void:
 		_add_capture_marker(captured_coord)
 
 	_add_focus_overlay(coord, base_tint, 0.32 if is_valid else 0.22, layout.hex_size - 9.0)
+	preview_summary_changed.emit({
+		"type": "move",
+		"is_valid": is_valid,
+		"player": piece_state,
+		"liberties": liberties.size(),
+		"captures": captured.size(),
+	})
 
 
 func _collect_liberties(source_board, group: Array) -> Array:

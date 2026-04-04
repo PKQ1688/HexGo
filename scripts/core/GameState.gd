@@ -5,6 +5,7 @@ const CaptureResolverRef = preload("res://scripts/core/CaptureResolver.gd")
 const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const ScoreCalculatorRef = preload("res://scripts/core/ScoreCalculator.gd")
+const ThreatAnalyzerRef = preload("res://scripts/core/ThreatAnalyzer.gd")
 const TerritoryResolverRef = preload("res://scripts/core/TerritoryResolver.gd")
 const TurnSimulatorRef = preload("res://scripts/core/TurnSimulator.gd")
 
@@ -170,6 +171,20 @@ func is_game_over() -> bool:
 
 func is_scoring_phase() -> bool:
 	return phase == Phase.SCORING
+
+
+func get_visible_threats() -> Dictionary:
+	if phase == Phase.SCORING or phase == Phase.GAME_OVER:
+		return {}
+
+	var threat_map: Dictionary = ThreatAnalyzerRef.analyze(board)
+	var visible_threats: Dictionary = {}
+	for key in threat_map:
+		var entry: Dictionary = threat_map[key]
+		if String(entry.get(ThreatAnalyzerRef.THREAT_LEVEL_KEY, ThreatAnalyzerRef.THREAT_LEVEL_SAFE)) == ThreatAnalyzerRef.THREAT_LEVEL_SAFE:
+			continue
+		visible_threats[key] = entry
+	return visible_threats
 
 
 func get_winner() -> int:

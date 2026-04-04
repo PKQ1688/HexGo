@@ -34,6 +34,15 @@ func sync_from_board(board_model) -> void:
 		node.queue_free()
 
 	set_dead_stones([])
+	sync_threat_levels({})
+
+
+func sync_threat_levels(threat_map: Dictionary) -> void:
+	for key: String in piece_nodes.keys():
+		var piece = piece_nodes[key]
+		var entry: Dictionary = threat_map.get(key, {})
+		var threat_level := String(entry.get("threat_level", "SAFE"))
+		piece.set_threat_level(threat_level)
 
 
 func place_piece(coord, player: int) -> void:

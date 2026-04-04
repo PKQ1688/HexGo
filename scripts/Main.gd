@@ -61,7 +61,9 @@ func _center_board() -> void:
 
 func _on_board_initialized(board) -> void:
 	board_view.setup_board(board, layout, game_state)
-	board_view.sync_from_board(board, game_state.get_scoring_board(), game_state.get_marked_dead_keys())
+	if not board_view.influence_renderer.preview_summary_changed.is_connected(_on_preview_summary_changed):
+		board_view.influence_renderer.preview_summary_changed.connect(_on_preview_summary_changed)
+	board_view.sync_from_board(board, game_state.get_scoring_board(), game_state.get_marked_dead_keys(), game_state.get_visible_threats())
 	_refresh_turn_ui()
 	end_game_dialog.hide_dialog()
 
@@ -82,12 +84,16 @@ func _on_cell_hovered(coord) -> void:
 	board_view.update_hover(coord, is_valid)
 
 
+func _on_preview_summary_changed(summary: Dictionary) -> void:
+	hud.set_preview_summary(summary)
+
+
 func _on_pass_pressed() -> void:
 	game_state.record_pass()
 
 
 func _on_turn_completed(player: int, _scores: Dictionary) -> void:
-	board_view.sync_from_board(game_state.board, game_state.get_scoring_board(), game_state.get_marked_dead_keys())
+	board_view.sync_from_board(game_state.board, game_state.get_scoring_board(), game_state.get_marked_dead_keys(), game_state.get_visible_threats())
 	_refresh_turn_ui(player)
 	if game_state.phase == GameStateRef.Phase.GAME_OVER:
 		board_view.update_hover(null, false)

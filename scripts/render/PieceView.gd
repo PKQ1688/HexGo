@@ -3,6 +3,11 @@ extends Node2D
 
 @export var radius: float = 20.0
 
+var danger_badge: Node2D
+var danger_badge_bg: Polygon2D
+var danger_badge_mark: Line2D
+var danger_badge_dot: Polygon2D
+
 
 func _ready() -> void:
 	var shadow: Polygon2D = $Shadow
@@ -53,6 +58,9 @@ func _ready() -> void:
 	dead_cross_b.visible = false
 	add_child(dead_cross_b)
 
+	_ensure_danger_badge()
+	set_threat_level("")
+
 
 func set_player(player: int) -> void:
 	var shadow: Polygon2D = $Shadow
@@ -90,6 +98,56 @@ func set_dead_marked(is_dead: bool) -> void:
 		dead_ring.visible = false
 		dead_cross_a.visible = false
 		dead_cross_b.visible = false
+
+
+func set_threat_level(threat_level: String) -> void:
+	_ensure_danger_badge()
+
+	var is_warning := threat_level == "WARNING"
+	var is_danger := threat_level == "DANGER"
+	danger_badge.visible = is_warning or is_danger
+	if not danger_badge.visible:
+		return
+
+	if is_warning:
+		danger_badge_bg.color = Color(0.98, 0.66, 0.16, 0.98)
+	elif is_danger:
+		danger_badge_bg.color = Color(0.90, 0.25, 0.22, 0.98)
+
+
+func _ensure_danger_badge() -> void:
+	if danger_badge != null:
+		return
+
+	danger_badge = Node2D.new()
+	danger_badge.name = "DangerBadge"
+	danger_badge.position = Vector2(radius * 0.44, -radius * 0.42)
+	danger_badge.z_index = 10
+	danger_badge.visible = false
+	add_child(danger_badge)
+
+	danger_badge_bg = Polygon2D.new()
+	danger_badge_bg.name = "Background"
+	danger_badge_bg.color = Color(0.98, 0.66, 0.16, 0.98)
+	danger_badge_bg.polygon = _build_circle(radius * 0.19, 18)
+	danger_badge.add_child(danger_badge_bg)
+
+	danger_badge_mark = Line2D.new()
+	danger_badge_mark.name = "Mark"
+	danger_badge_mark.width = 2.3
+	danger_badge_mark.default_color = Color(1.0, 1.0, 1.0, 0.98)
+	danger_badge_mark.points = PackedVector2Array([
+		Vector2(0, -radius * 0.10),
+		Vector2(0, radius * 0.03),
+	])
+	danger_badge.add_child(danger_badge_mark)
+
+	danger_badge_dot = Polygon2D.new()
+	danger_badge_dot.name = "Dot"
+	danger_badge_dot.color = Color(1.0, 1.0, 1.0, 0.98)
+	danger_badge_dot.polygon = _build_circle(radius * 0.035, 10)
+	danger_badge_dot.position = Vector2(0, radius * 0.09)
+	danger_badge.add_child(danger_badge_dot)
 
 
 func play_place_animation() -> void:

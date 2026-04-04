@@ -3,6 +3,7 @@ extends SceneTree
 const GameState = preload("res://scripts/core/GameState.gd")
 const HexBoard = preload("res://scripts/core/HexBoard.gd")
 const HexCoord = preload("res://scripts/core/HexCoord.gd")
+const ThreatAnalyzer = preload("res://scripts/core/ThreatAnalyzer.gd")
 
 var _turn_events: Array = []
 var _captured_events: Array = []
@@ -22,6 +23,7 @@ func _run_tests() -> void:
 	_test_territory_flow()
 	_test_scoring_phase_and_resume()
 	_test_confirm_score_game_over()
+	_test_visible_threats_follow_phase()
 	print("All game flow tests passed.")
 
 
@@ -187,6 +189,34 @@ func _test_confirm_score_game_over() -> void:
 	_assert(state.confirm_scoring(), "Confirming score from scoring phase should succeed.")
 	_assert(state.phase == GameState.Phase.GAME_OVER, "Confirming score should end the game.")
 	_assert(not _game_over_scores.is_empty(), "Final confirmation should emit game_over.")
+	state.free()
+
+
+func _test_visible_threats_follow_phase() -> void:
+	_reset_events()
+	var state := _new_state(3)
+	state.board.set_cell(HexCoord.new(0, 0), HexBoard.CellState.BLACK)
+	for neighbor in HexCoord.new(0, 0).neighbors():
+		state.board.set_cell(neighbor, HexBoard.CellState.WHITE)
+	state.board.set_cell(HexCoord.new(3, 0), HexBoard.CellState.BLACK)
+
+	var threat_map: Dictionary = state.get_visible_threats()
+	var expected_map: Dictionary = ThreatAnalyzer.analyze(state.board)
+	_assert(threat_map.size() == 1, "Visible threats should exclude SAFE groups during normal play.")
+	_assert(threat_map.has(HexCoord.new(0, 0).to_key()), "Visible threats should include the threatened center group.")
+	_assert(not threat_map.has(HexCoord.new(3, 0).to_key()), "Visible threats should exclude SAFE groups.")
+	_assert(threat_map == {
+		HexCoord.new(0, 0).to_key(): expected_map[HexCoord.new(0, 0).to_key()],
+	}, "Visible threats should match analyzed non-SAFE metadata for the active phase.")
+
+	state.record_pass()
+	state.record_pass()
+	_assert(state.phase == GameState.Phase.SCORING, "Double pass should enter scoring phase.")
+	_assert(state.get_visible_threats().is_empty(), "Visible threats should be hidden during scoring.")
+
+	_assert(state.confirm_scoring(), "Confirming scoring should succeed.")
+	_assert(state.phase == GameState.Phase.GAME_OVER, "Confirming scoring should end the game.")
+	_assert(state.get_visible_threats().is_empty(), "Visible threats should remain hidden after game over.")
 	state.free()
 
 
