@@ -13,6 +13,12 @@ static func rank_place_actions(snapshot: Dictionary, perspective_player: int = -
 	var player: int = perspective_player if perspective_player >= 0 else int(snapshot["current_player"])
 	var ranked: Array = []
 	var board: HexBoardRef = snapshot["board"]
+	var current_scores: Dictionary = snapshot.get("scores", {})
+	if current_scores.is_empty():
+		current_scores = ScoreCalculatorRef.calculate(board)
+	var territory_before: Dictionary = snapshot.get("territory_map", {})
+	if territory_before.is_empty():
+		territory_before = TerritoryResolverRef.resolve_all(board)
 	for coord in board.get_empty_cells():
 		var result: Dictionary = TurnSimulatorRef.simulate_place(
 			board,
@@ -28,7 +34,7 @@ static func rank_place_actions(snapshot: Dictionary, perspective_player: int = -
 		ranked.append({
 			"action": action,
 			"result": result,
-			"score": score_move(snapshot, result, player, coord),
+			"score": score_move(snapshot, result, player, coord, current_scores, territory_before),
 		})
 
 	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -37,7 +43,14 @@ static func rank_place_actions(snapshot: Dictionary, perspective_player: int = -
 	return ranked
 
 
-static func score_move(snapshot: Dictionary, result: Dictionary, perspective_player: int, coord: HexCoordRef) -> float:
+static func score_move(
+	snapshot: Dictionary,
+	result: Dictionary,
+	perspective_player: int,
+	coord: HexCoordRef,
+	current_scores: Dictionary = {},
+	territory_before: Dictionary = {},
+) -> float:
 	var next_snapshot: Dictionary = build_next_snapshot(snapshot, result, "move")
 	var board_before: HexBoardRef = snapshot["board"]
 	var board_after: HexBoardRef = result["board"]
@@ -47,12 +60,22 @@ static func score_move(snapshot: Dictionary, result: Dictionary, perspective_pla
 	var total_cells: int = max(1, board_before.all_coords.size())
 	var early_bias := 1.0 - clampf(float(move_count) / float(total_cells), 0.0, 1.0)
 
-	var current_scores: Dictionary = snapshot.get("scores", ScoreCalculatorRef.calculate(board_before))
-	var next_scores: Dictionary = result.get("scores", ScoreCalculatorRef.calculate(board_after))
+	if current_scores.is_empty():
+		current_scores = snapshot.get("scores", {})
+	if current_scores.is_empty():
+		current_scores = ScoreCalculatorRef.calculate(board_before)
+	var next_scores: Dictionary = result.get("scores", {})
+	if next_scores.is_empty():
+		next_scores = ScoreCalculatorRef.calculate(board_after)
 	var score_gain := float(next_scores.get(perspective_player, 0) - current_scores.get(perspective_player, 0))
 
-	var territory_before: Dictionary = TerritoryResolverRef.resolve_all(board_before)
-	var territory_after: Dictionary = result.get("territory_map", TerritoryResolverRef.resolve_all(board_after))
+	if territory_before.is_empty():
+		territory_before = snapshot.get("territory_map", {})
+	if territory_before.is_empty():
+		territory_before = TerritoryResolverRef.resolve_all(board_before)
+	var territory_after: Dictionary = result.get("territory_map", {})
+	if territory_after.is_empty():
+		territory_after = TerritoryResolverRef.resolve_all(board_after)
 	var territory_gain := float(
 		territory_after.get(own_piece, []).size() - territory_before.get(own_piece, []).size()
 	)
@@ -79,12 +102,16 @@ static func score_move(snapshot: Dictionary, result: Dictionary, perspective_pla
 static func score_position(snapshot: Dictionary, perspective_player: int) -> float:
 	var board: HexBoardRef = snapshot["board"]
 	var other: int = other_player(perspective_player)
-	var scores: Dictionary = snapshot.get("scores", ScoreCalculatorRef.calculate(board))
+	var scores: Dictionary = snapshot.get("scores", {})
+	if scores.is_empty():
+		scores = ScoreCalculatorRef.calculate(board)
 	var score_diff := float(scores.get(perspective_player, 0) - scores.get(other, 0))
 
 	var own_piece: int = piece_state_for_player(perspective_player)
 	var enemy_piece: int = piece_state_for_player(other)
-	var territory_map: Dictionary = TerritoryResolverRef.resolve_all(board)
+	var territory_map: Dictionary = snapshot.get("territory_map", {})
+	if territory_map.is_empty():
+		territory_map = TerritoryResolverRef.resolve_all(board)
 	var territory_diff := float(territory_map.get(own_piece, []).size() - territory_map.get(enemy_piece, []).size())
 	var safety_diff := _group_safety(board, own_piece) - _group_safety(board, enemy_piece)
 	var threat_diff := _atari_pressure(board, enemy_piece) - _atari_pressure(board, own_piece)
@@ -103,7 +130,9 @@ static func should_pass(snapshot: Dictionary, best_score: float) -> bool:
 	if move_count < int(float(total_cells) * 0.68):
 		return false
 
-	var scores: Dictionary = snapshot.get("scores", ScoreCalculatorRef.calculate(board))
+	var scores: Dictionary = snapshot.get("scores", {})
+	if scores.is_empty():
+		scores = ScoreCalculatorRef.calculate(board)
 	var player: int = int(snapshot["current_player"])
 	var other: int = other_player(player)
 	return best_score < 14.0 and int(scores.get(player, 0)) >= int(scores.get(other, 0))
@@ -124,12 +153,13 @@ static func build_next_snapshot(snapshot: Dictionary, result: Dictionary, action
 		next_previous_signature = String(snapshot.get("current_board_signature", ""))
 
 	return {
-		"board": result["board"].clone(),
+		"board": result["board"],
 		"current_player": int(result["next_player"]),
 		"previous_board_signature": next_previous_signature,
 		"current_board_signature": String(result.get("board_signature", "")),
 		"consecutive_passes": int(result.get("consecutive_passes", 0)),
-		"scores": result.get("scores", {}).duplicate(true),
+		"scores": result.get("scores", {}),
+		"territory_map": result.get("territory_map", {}),
 		"move_count": int(snapshot.get("move_count", 0)) + 1,
 		"board_radius": int(snapshot.get("board_radius", 0)),
 	}

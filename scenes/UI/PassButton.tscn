@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/PassButtonController.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
-bg_color = Color(0.17, 0.20, 0.27, 1.0)
+bg_color = Color(0.90, 0.93, 0.97, 1.0)
 corner_radius_top_left = 9
 corner_radius_top_right = 9
 corner_radius_bottom_left = 9
@@ -12,14 +12,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.64, 0.72, 0.88, 0.42)
+border_color = Color(0.54, 0.64, 0.80, 0.50)
 content_margin_left = 16.0
 content_margin_top = 10.0
 content_margin_right = 16.0
 content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover"]
-bg_color = Color(0.22, 0.28, 0.38, 1.0)
+bg_color = Color(0.85, 0.90, 0.96, 1.0)
 corner_radius_top_left = 9
 corner_radius_top_right = 9
 corner_radius_bottom_left = 9
@@ -28,14 +28,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.82, 0.91, 1.0, 0.58)
+border_color = Color(0.42, 0.56, 0.76, 0.68)
 content_margin_left = 16.0
 content_margin_top = 10.0
 content_margin_right = 16.0
 content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pressed"]
-bg_color = Color(0.11, 0.14, 0.20, 1.0)
+bg_color = Color(0.82, 0.87, 0.94, 1.0)
 corner_radius_top_left = 9
 corner_radius_top_right = 9
 corner_radius_bottom_left = 9
@@ -44,14 +44,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.54, 0.63, 0.80, 0.34)
+border_color = Color(0.46, 0.56, 0.70, 0.46)
 content_margin_left = 17.0
 content_margin_top = 11.0
 content_margin_right = 15.0
 content_margin_bottom = 9.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_disabled"]
-bg_color = Color(0.09, 0.11, 0.16, 0.52)
+bg_color = Color(0.88, 0.89, 0.91, 0.72)
 corner_radius_top_left = 9
 corner_radius_top_right = 9
 corner_radius_bottom_left = 9
@@ -60,7 +60,7 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.30, 0.34, 0.44, 0.24)
+border_color = Color(0.58, 0.62, 0.70, 0.26)
 content_margin_left = 16.0
 content_margin_top = 10.0
 content_margin_right = 16.0
@@ -73,6 +73,6 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pressed")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_disabled")
-theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+theme_override_colors/font_color = Color(0.24, 0.34, 0.48, 1)
 theme_override_font_sizes/font_size = 14
 script = ExtResource("1")

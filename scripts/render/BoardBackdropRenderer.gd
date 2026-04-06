@@ -17,25 +17,25 @@ func _draw() -> void:
 	if board == null or layout == null or board_extent <= 0.0:
 		return
 
-	draw_circle(Vector2(0, layout.hex_size * 0.9), board_extent * 1.34, Color(0.02, 0.04, 0.07, 0.34))
-	draw_circle(Vector2.ZERO, board_extent * 1.26, Color(0.05, 0.09, 0.14, 0.88))
-	draw_circle(Vector2.ZERO, board_extent * 0.98, Color(0.10, 0.14, 0.20, 0.44))
+	draw_circle(Vector2(0, layout.hex_size * 0.9), board_extent * 1.34, Color(0.86, 0.82, 0.74, 0.30))
+	draw_circle(Vector2.ZERO, board_extent * 1.26, Color(0.96, 0.93, 0.86, 0.92))
+	draw_circle(Vector2.ZERO, board_extent * 0.98, Color(0.90, 0.86, 0.77, 0.48))
 
 	var outer_plate := _build_hexagon(board_extent + layout.hex_size * 1.28)
 	var inner_plate := _build_hexagon(board_extent + layout.hex_size * 0.62)
 	var inner_ring := _build_hexagon(board_extent + layout.hex_size * 0.18)
 
-	draw_colored_polygon(_offset_points(outer_plate, Vector2(0, layout.hex_size * 0.18)), Color(0.02, 0.03, 0.05, 0.42))
-	draw_colored_polygon(outer_plate, Color(0.17, 0.12, 0.07, 0.94))
-	draw_colored_polygon(inner_plate, Color(0.28, 0.20, 0.11, 0.92))
-	draw_colored_polygon(inner_ring, Color(0.45, 0.33, 0.17, 0.34))
+	draw_colored_polygon(_offset_points(outer_plate, Vector2(0, layout.hex_size * 0.18)), Color(0.64, 0.55, 0.40, 0.18))
+	draw_colored_polygon(outer_plate, Color(0.82, 0.70, 0.50, 0.94))
+	draw_colored_polygon(inner_plate, Color(0.90, 0.81, 0.63, 0.94))
+	draw_colored_polygon(inner_ring, Color(0.98, 0.92, 0.78, 0.46))
 
-	_draw_loop(outer_plate, Color(0.82, 0.67, 0.35, 0.30), 3.4)
-	_draw_loop(inner_plate, Color(0.95, 0.83, 0.58, 0.24), 2.2)
-	_draw_loop(inner_ring, Color(1.0, 0.92, 0.74, 0.18), 1.4)
+	_draw_loop(outer_plate, Color(0.66, 0.51, 0.26, 0.34), 3.4)
+	_draw_loop(inner_plate, Color(0.80, 0.64, 0.35, 0.28), 2.2)
+	_draw_loop(inner_ring, Color(0.92, 0.79, 0.53, 0.22), 1.4)
 
 	for corner in _build_hexagon(board_extent + layout.hex_size * 0.92):
-		draw_circle(corner * 0.93, layout.hex_size * 0.08, Color(0.96, 0.84, 0.58, 0.32))
+		draw_circle(corner * 0.93, layout.hex_size * 0.08, Color(0.86, 0.68, 0.37, 0.34))
 
 
 func _draw_loop(points: PackedVector2Array, color: Color, width: float) -> void:

@@ -279,8 +279,10 @@ func _finish_game() -> void:
 
 
 func _update_scores() -> void:
-	scores = ScoreCalculatorRef.calculate(board, marked_dead_stones)
-	score_breakdown = ScoreCalculatorRef.calculate_breakdown(board, marked_dead_stones)
+	var scoring_board = ScoreCalculatorRef.build_scoring_board(board, marked_dead_stones)
+	var territory_map: Dictionary = TerritoryResolverRef.resolve_all(scoring_board)
+	score_breakdown = ScoreCalculatorRef.calculate_breakdown_from_territory_map(scoring_board, territory_map)
+	scores = ScoreCalculatorRef.totals_from_breakdown(score_breakdown)
 
 
 func _other_player(player: int) -> int:

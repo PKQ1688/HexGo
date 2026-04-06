@@ -4,6 +4,8 @@ extends Node2D
 const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const PieceScene = preload("res://scenes/Piece.tscn")
 
+const CAPTURE_GHOST_LIFETIME_MS := 220
+
 var layout = null
 var piece_nodes: Dictionary = {}
 
@@ -16,6 +18,7 @@ func setup(board_model, layout_model) -> void:
 
 
 func sync_from_board(board_model) -> void:
+	_reindex_live_piece_nodes()
 	var desired: Dictionary = {}
 	for coord in board_model.all_coords:
 		var state: int = board_model.get_cell(coord)
@@ -33,6 +36,7 @@ func sync_from_board(board_model) -> void:
 		piece_nodes.erase(key)
 		node.queue_free()
 
+	_cleanup_orphan_visuals(desired)
 	set_dead_stones([])
 	sync_threat_levels({})
 
@@ -59,6 +63,7 @@ func capture_pieces(coords: Array) -> void:
 			continue
 		var node = piece_nodes[key]
 		piece_nodes.erase(key)
+		node.set_meta("capturing_until_msec", Time.get_ticks_msec() + CAPTURE_GHOST_LIFETIME_MS)
 		node.play_capture_animation()
 
 
@@ -76,6 +81,46 @@ func _create_piece(coord, player: int, animate: bool) -> void:
 	pieces_container.add_child(piece)
 	piece.position = layout.cube_to_pixel(coord)
 	piece.set_player(player)
+	piece.set_meta("coord_key", coord.to_key())
 	piece_nodes[coord.to_key()] = piece
 	if animate:
 		piece.play_place_animation()
+
+
+func _reindex_live_piece_nodes() -> void:
+	piece_nodes.clear()
+	for child in pieces_container.get_children():
+		if child.has_meta("capturing_until_msec"):
+			continue
+		var key := _piece_key(child)
+		if key == "":
+			continue
+		if piece_nodes.has(key):
+			child.queue_free()
+			continue
+		piece_nodes[key] = child
+
+
+func _cleanup_orphan_visuals(desired: Dictionary) -> void:
+	var now := Time.get_ticks_msec()
+	var seen_live: Dictionary = {}
+	for child in pieces_container.get_children():
+		var key := _piece_key(child)
+		if key == "":
+			child.queue_free()
+			continue
+		if child.has_meta("capturing_until_msec"):
+			if int(child.get_meta("capturing_until_msec", 0)) <= now:
+				child.queue_free()
+			continue
+		if not desired.has(key):
+			child.queue_free()
+			continue
+		if seen_live.has(key):
+			child.queue_free()
+			continue
+		seen_live[key] = true
+
+
+func _piece_key(node: Node) -> String:
+	return String(node.get_meta("coord_key", ""))

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/MatchSetupDialog.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.07, 0.09, 0.14, 0.97)
+bg_color = Color(0.99, 0.97, 0.93, 0.98)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_left = 18
@@ -12,14 +12,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.80, 0.67, 0.37, 0.34)
+border_color = Color(0.74, 0.60, 0.34, 0.42)
 content_margin_left = 24.0
 content_margin_top = 24.0
 content_margin_right = 24.0
 content_margin_bottom = 24.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
-bg_color = Color(0.48, 0.35, 0.15, 1.0)
+bg_color = Color(0.86, 0.73, 0.45, 1.0)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
@@ -28,14 +28,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1.0, 0.88, 0.60, 0.72)
+border_color = Color(0.75, 0.56, 0.24, 0.62)
 content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_option"]
-bg_color = Color(0.15, 0.18, 0.26, 1.0)
+bg_color = Color(0.94, 0.95, 0.98, 1.0)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
@@ -44,14 +44,14 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.46, 0.56, 0.76, 0.44)
+border_color = Color(0.58, 0.65, 0.78, 0.50)
 content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_option_hover"]
-bg_color = Color(0.20, 0.25, 0.36, 1.0)
+bg_color = Color(0.88, 0.91, 0.97, 1.0)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_left = 8
@@ -60,7 +60,7 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.76, 0.86, 1.0, 0.66)
+border_color = Color(0.42, 0.56, 0.76, 0.66)
 content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
@@ -80,7 +80,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.02, 0.03, 0.06, 0.78)
+color = Color(0.96, 0.93, 0.88, 0.72)
 
 [node name="PanelContainer" type="PanelContainer" parent="Overlay"]
 layout_mode = 1
@@ -102,13 +102,13 @@ theme_override_constants/separation = 14
 text = "对局设置"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.97, 0.90, 0.72, 1)
+theme_override_colors/font_color = Color(0.46, 0.31, 0.12, 1)
 
 [node name="Description" type="Label" parent="Overlay/PanelContainer/VBoxContainer"]
 text = "选择黑白双方控制方式与 AI 难度。计分阶段仍由玩家手动确认。"
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 12
-theme_override_colors/font_color = Color(0.73, 0.79, 0.89, 1)
+theme_override_colors/font_color = Color(0.40, 0.45, 0.52, 1)
 
 [node name="BlackRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
 theme_override_constants/separation = 12
@@ -123,7 +123,7 @@ size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_option")
 theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
-theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+theme_override_colors/font_color = Color(0.24, 0.30, 0.40, 1)
 
 [node name="WhiteRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
 theme_override_constants/separation = 12
@@ -138,7 +138,7 @@ size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_option")
 theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
-theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+theme_override_colors/font_color = Color(0.24, 0.30, 0.40, 1)
 
 [node name="DifficultyRow" type="HBoxContainer" parent="Overlay/PanelContainer/VBoxContainer"]
 theme_override_constants/separation = 12
@@ -153,7 +153,7 @@ size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_option")
 theme_override_styles/hover = SubResource("StyleBoxFlat_option_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_option")
-theme_override_colors/font_color = Color(0.88, 0.92, 0.98, 1)
+theme_override_colors/font_color = Color(0.24, 0.30, 0.40, 1)
 
 [node name="StartButton" type="Button" parent="Overlay/PanelContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 44)
@@ -161,4 +161,4 @@ text = "开始对局"
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
-theme_override_colors/font_color = Color(0.19, 0.13, 0.05, 1)
+theme_override_colors/font_color = Color(0.31, 0.21, 0.08, 1)

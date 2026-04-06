@@ -10,8 +10,8 @@ const HardAIStrategyRef = preload("res://scripts/ai/HardAIStrategy.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
 const MediumAIStrategyRef = preload("res://scripts/ai/MediumAIStrategy.gd")
 
-@export var think_delay_min: float = 0.2
-@export var think_delay_max: float = 0.4
+@export var think_delay_min: float = 0.0
+@export var think_delay_max: float = 0.0
 
 var game_state = null
 var match_config: Dictionary = MatchConfigRef.default_config()

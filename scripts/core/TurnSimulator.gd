@@ -19,7 +19,23 @@ static func simulate_place(
 	coord: HexCoordRef,
 	dead_stones: Dictionary = {}
 ) -> Dictionary:
-	var result := _base_result(source_board, current_player, current_board_signature, dead_stones)
+	var signature := current_board_signature
+	if signature == "" and source_board != null:
+		signature = board_signature(source_board)
+	var result := {
+		"legal": false,
+		"board": source_board,
+		"captured": [],
+		"captured_count": 0,
+		"territory_map": {},
+		"scores": {},
+		"board_signature": signature,
+		"next_player": current_player,
+		"ended_by_double_pass": false,
+		"consecutive_passes": 0,
+		"self_group": [],
+		"self_group_liberties": 0,
+	}
 	if source_board == null or coord == null:
 		return result
 	if not source_board.is_valid_coord(coord):
@@ -52,8 +68,8 @@ static func simulate_place(
 	result["board"] = board_copy
 	result["captured"] = _duplicate_coords(captured)
 	result["captured_count"] = captured.size()
-	result["territory_map"] = _duplicate_territory_map(territory_map)
-	result["scores"] = ScoreCalculatorRef.calculate(board_copy, dead_stones)
+	result["territory_map"] = territory_map
+	result["scores"] = ScoreCalculatorRef.calculate_from_territory_map(board_copy, territory_map, dead_stones)
 	result["board_signature"] = next_signature
 	result["next_player"] = _other_player(current_player)
 	result["self_group"] = _duplicate_coords(self_group)
