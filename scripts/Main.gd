@@ -41,7 +41,6 @@ func _connect_signals() -> void:
 	end_game_dialog.restart_requested.connect(_on_restart_requested)
 	end_game_dialog.quit_requested.connect(_on_quit_requested)
 	match_setup_dialog.start_requested.connect(_on_match_start_requested)
-	ai_controller.action_ready.connect(_on_ai_action_ready)
 	ai_controller.thinking_changed.connect(_on_ai_thinking_changed)
 
 	game_state.board_initialized.connect(_on_board_initialized)
@@ -71,7 +70,7 @@ func _on_cell_clicked(coord) -> void:
 	if game_state.is_scoring_phase():
 		game_state.toggle_dead_group(coord)
 	else:
-		game_state.execute_turn(coord)
+		ai_controller.submit_move_coord(coord)
 
 
 func _on_cell_hovered(coord) -> void:
@@ -86,7 +85,7 @@ func _on_preview_summary_changed(summary: Dictionary) -> void:
 
 
 func _on_pass_pressed() -> void:
-	game_state.record_pass()
+	ai_controller.submit_pass()
 
 
 func _on_turn_completed(player: int, _scores: Dictionary) -> void:
@@ -108,11 +107,11 @@ func _on_restart_requested() -> void:
 
 
 func _on_resume_play_requested() -> void:
-	game_state.resume_play()
+	ai_controller.resume_play()
 
 
 func _on_confirm_score_requested() -> void:
-	game_state.confirm_scoring()
+	ai_controller.confirm_scoring()
 
 
 func _on_quit_requested() -> void:
@@ -136,17 +135,6 @@ func _on_match_start_requested(config: Dictionary) -> void:
 func _on_ai_thinking_changed(is_thinking: bool) -> void:
 	hud.set_ai_thinking(is_thinking)
 	_refresh_turn_ui()
-
-
-func _on_ai_action_ready(action: Dictionary) -> void:
-	if game_state.phase != GameStateRef.Phase.WAITING:
-		return
-
-	if action.get("type", "pass") == "move" and action.has("coord"):
-		if game_state.execute_turn(action["coord"]):
-			return
-
-	game_state.record_pass()
 
 
 func _refresh_turn_ui(player: int = -1) -> void:

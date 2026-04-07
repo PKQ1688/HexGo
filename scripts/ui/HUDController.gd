@@ -68,7 +68,7 @@ func update_turn(current_player: int, breakdown: Dictionary, phase: int) -> void
 			else:
 				player_indicator.text = "○  白方思考中" if current_control == MatchConfigRef.PlayerControl.AI and ai_thinking else "○  白方回合"
 			if current_control == MatchConfigRef.PlayerControl.AI and ai_thinking:
-				default_status_text = "AI 思考中…"
+				default_status_text = "代理思考中…"
 			else:
 				default_status_text = "悬停查看摘要。"
 

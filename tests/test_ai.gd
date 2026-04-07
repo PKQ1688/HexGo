@@ -20,6 +20,7 @@ func _run() -> void:
 	_test_turn_simulator_consistency()
 	_test_medium_and_hard_ai_prefer_capture()
 	await _test_ai_controller_emits_action_for_ai_turn()
+	await _test_rl_and_llm_agents_fallback_without_service()
 	await _test_main_human_black_vs_ai_white()
 	await _test_main_ai_black_vs_human_white()
 	print("All AI tests passed.")
@@ -108,10 +109,39 @@ func _test_ai_controller_emits_action_for_ai_turn() -> void:
 	await _await_frames(2)
 	_assert(actions.size() == 1, "AIController should emit one action when an AI turn begins.")
 	_assert(actions[0]["type"] == "move", "AIController should emit a concrete move action when legal moves exist.")
+	_assert(actions[0].has("action_index") and int(actions[0]["action_index"]) >= 0, "AIController should emit a stable action_index for runtime consumers.")
 
 	controller.queue_free()
 	state.queue_free()
 	await _await_frames(1)
+
+
+func _test_rl_and_llm_agents_fallback_without_service() -> void:
+	for agent_type in [MatchConfig.AgentType.RL, MatchConfig.AgentType.LLM]:
+		var state := GameState.new()
+		var controller := AIController.new()
+		controller.think_delay_min = 0.0
+		controller.think_delay_max = 0.0
+		root.add_child(state)
+		root.add_child(controller)
+
+		var actions: Array = []
+		controller.action_ready.connect(func(action: Dictionary) -> void:
+			actions.append(action)
+		)
+		controller.configure(state, {
+			"black_agent": MatchConfig.build_agent_spec(agent_type, MatchConfig.AIDifficulty.EASY),
+			"white_agent": MatchConfig.build_agent_spec(MatchConfig.AgentType.HUMAN, MatchConfig.AIDifficulty.EASY),
+		})
+		state.setup_game(2)
+		await _await_frames(2)
+		_assert(actions.size() == 1, "%s agent should still produce a move when no endpoint is configured." % MatchConfig.agent_type_label(agent_type))
+		_assert(actions[0]["type"] == "move", "%s fallback should still produce a concrete move action." % MatchConfig.agent_type_label(agent_type))
+		_assert(actions[0].has("action_index"), "%s fallback action should still include action_index." % MatchConfig.agent_type_label(agent_type))
+
+		controller.queue_free()
+		state.queue_free()
+		await _await_frames(1)
 
 
 func _test_main_human_black_vs_ai_white() -> void:

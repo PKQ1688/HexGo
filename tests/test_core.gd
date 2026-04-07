@@ -1,9 +1,11 @@
 extends SceneTree
 
+const ActionCodec = preload("res://scripts/core/ActionCodec.gd")
 const CaptureResolver = preload("res://scripts/core/CaptureResolver.gd")
 const HexBoard = preload("res://scripts/core/HexBoard.gd")
 const HexCoord = preload("res://scripts/core/HexCoord.gd")
 const HexLayout = preload("res://scripts/render/HexLayout.gd")
+const MatchEngine = preload("res://scripts/core/MatchEngine.gd")
 const ScoreCalculator = preload("res://scripts/core/ScoreCalculator.gd")
 const ThreatAnalyzer = preload("res://scripts/core/ThreatAnalyzer.gd")
 const TerritoryResolver = preload("res://scripts/core/TerritoryResolver.gd")
@@ -17,6 +19,8 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_round_trip()
 	_test_board_size()
+	_test_action_codec()
+	_test_match_engine_events()
 	_test_capture()
 	_test_threat_analysis()
 	_test_territory()
@@ -37,6 +41,56 @@ func _test_board_size() -> void:
 	var board := HexBoard.new()
 	board.initialize(3)
 	_assert(board.all_coords.size() == 37, "Board size formula failed for radius 3.")
+
+
+func _test_action_codec() -> void:
+	var codec := ActionCodec.new(2)
+	var pass_index := codec.pass_action_index()
+	_assert(codec.action_count() == 20, "Radius-2 action space should contain 19 cells plus pass.")
+	_assert(codec.is_pass_action(pass_index), "Pass action index should decode as pass.")
+
+	var center := HexCoord.new(0, 0)
+	var center_index := codec.coord_to_action_index(center)
+	_assert(center_index >= 0 and center_index < pass_index, "Center coord should map to a non-pass action index.")
+	var decoded_center: Dictionary = codec.decode_action_index(center_index)
+	_assert(decoded_center.get("type", "") == "move", "Decoded center action should be a move.")
+	_assert(decoded_center.has("coord") and decoded_center["coord"].equals(center), "Center action should round-trip through ActionCodec.")
+	_assert(codec.decode_action_index(pass_index).get("type", "") == "pass", "Pass index should decode to a pass action.")
+
+	var engine := MatchEngine.new()
+	engine.setup_game(1)
+	engine.consume_events()
+	var radius_one_codec := ActionCodec.new(1)
+	var mask: Array = radius_one_codec.legal_action_mask(engine)
+	_assert(mask.size() == 8, "Radius-1 legal action mask should include 7 cells plus pass.")
+	for value in mask:
+		_assert(int(value) == 1, "Fresh game legal mask should allow every move and pass.")
+
+	_assert(engine.execute_turn(center), "MatchEngine should allow an opening center move on radius 1.")
+	engine.consume_events()
+	mask = radius_one_codec.legal_action_mask(engine)
+	_assert(mask[radius_one_codec.coord_to_action_index(center)] == 0, "Played coordinate should become illegal in the action mask.")
+	_assert(mask[radius_one_codec.pass_action_index()] == 1, "Pass should remain legal during a normal turn.")
+
+
+func _test_match_engine_events() -> void:
+	var engine := MatchEngine.new()
+	engine.setup_game(2)
+	var setup_events: Array = engine.consume_events()
+	_assert(setup_events.size() == 5, "MatchEngine setup should emit preview, board init, scoring state, and turn completion events.")
+	_assert(String(setup_events[0].get("type", "")) == MatchEngine.EVENT_TERRITORY_FORMED, "Setup should start with preview territory events.")
+	_assert(String(setup_events[1].get("type", "")) == MatchEngine.EVENT_TERRITORY_FORMED, "Setup should emit both territory preview owners.")
+	_assert(String(setup_events[2].get("type", "")) == MatchEngine.EVENT_BOARD_INITIALIZED, "Setup should emit board initialization after preview events.")
+	_assert(String(setup_events[3].get("type", "")) == MatchEngine.EVENT_SCORING_STATE_CHANGED, "Setup should emit initial scoring state after board initialization.")
+	_assert(String(setup_events[4].get("type", "")) == MatchEngine.EVENT_TURN_COMPLETED, "Setup should finish with turn_completed.")
+
+	var opening := HexCoord.new(0, 0)
+	_assert(engine.execute_turn(opening), "MatchEngine should accept a legal opening move.")
+	var turn_events: Array = engine.consume_events()
+	_assert(not turn_events.is_empty(), "A successful MatchEngine move should emit events.")
+	_assert(String(turn_events[0].get("type", "")) == MatchEngine.EVENT_PIECE_PLACED, "A successful move should first emit piece_placed.")
+	_assert(String(turn_events[turn_events.size() - 1].get("type", "")) == MatchEngine.EVENT_TURN_COMPLETED, "A successful move should end with turn_completed.")
+	_assert(engine.board.get_cell(opening) == HexBoard.CellState.BLACK, "Opening move should update the underlying MatchEngine board.")
 
 
 func _test_capture() -> void:
