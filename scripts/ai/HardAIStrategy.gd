@@ -30,9 +30,14 @@ func choose_action(state_snapshot: Dictionary) -> Dictionary:
 		var candidate: Dictionary = ranked[index]
 		var next_snapshot: Dictionary = AIHeuristicsRef.build_next_snapshot(state_snapshot, candidate["result"], "move")
 		var score: float = _search(next_snapshot, root_player, depth - 1, -INF, INF, started_at)
+		var timed_out_after_search: bool = Time.get_ticks_msec() - started_at >= time_budget_ms
+		if timed_out_after_search and index > 0:
+			break
 		if score > best_score:
 			best_score = score
 			best_coord = candidate["action"]["coord"].duplicated()
+		if timed_out_after_search:
+			break
 
 	return {"type": "move", "coord": best_coord}
 
@@ -50,7 +55,7 @@ func _search(snapshot: Dictionary, root_player: int, depth: int, alpha: float, b
 		return _search(next_snapshot, root_player, depth - 1, alpha, beta, started_at)
 
 	var limit: int = min(5, ranked.size())
-	var maximizing := int(snapshot["current_player"]) == root_player
+	var maximizing: bool = int(snapshot["current_player"]) == root_player
 	var value: float = -INF if maximizing else INF
 
 	for index in range(limit):

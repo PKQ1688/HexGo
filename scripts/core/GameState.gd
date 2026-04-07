@@ -153,7 +153,7 @@ func can_place_at(coord: HexCoordRef) -> bool:
 
 func execute_turn(coord: HexCoordRef) -> bool:
 	_ensure_engine()
-	var success := _engine.execute_turn(coord)
+	var success: bool = bool(_engine.execute_turn(coord))
 	_flush_engine_events()
 	return success
 
@@ -175,21 +175,21 @@ func can_toggle_dead_at(coord: HexCoordRef) -> bool:
 
 func toggle_dead_group(coord: HexCoordRef) -> bool:
 	_ensure_engine()
-	var success := _engine.toggle_dead_group(coord)
+	var success: bool = bool(_engine.toggle_dead_group(coord))
 	_flush_engine_events()
 	return success
 
 
 func resume_play() -> bool:
 	_ensure_engine()
-	var success := _engine.resume_play()
+	var success: bool = bool(_engine.resume_play())
 	_flush_engine_events()
 	return success
 
 
 func confirm_scoring() -> bool:
 	_ensure_engine()
-	var success := _engine.confirm_scoring()
+	var success: bool = bool(_engine.confirm_scoring())
 	_flush_engine_events()
 	return success
 

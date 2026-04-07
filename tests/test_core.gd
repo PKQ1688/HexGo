@@ -22,6 +22,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_round_trip()
 	_test_board_size()
+	_test_runtime_scripts_load()
 	_test_engine_protocol_observation()
 	_test_native_bridge_observation_fallback()
 	_test_game_state_backend_selection()
@@ -47,6 +48,15 @@ func _test_board_size() -> void:
 	var board := HexBoard.new()
 	board.initialize(3)
 	_assert(board.all_coords.size() == 37, "Board size formula failed for radius 3.")
+
+
+func _test_runtime_scripts_load() -> void:
+	var match_config_script = load("res://scripts/ai/MatchConfig.gd")
+	_assert(match_config_script != null, "MatchConfig script should load successfully.")
+	var agent_factory_script = load("res://scripts/agents/AgentFactory.gd")
+	_assert(agent_factory_script != null, "AgentFactory script should load successfully.")
+	var runtime_script = load("res://scripts/runtime/MatchRuntime.gd")
+	_assert(runtime_script != null, "MatchRuntime script should load successfully.")
 
 
 func _test_engine_protocol_observation() -> void:

@@ -7,7 +7,7 @@ const AIHeuristicsRef = preload("res://scripts/ai/AIHeuristics.gd")
 static func top_candidates(observation: Dictionary, action_codec = null, limit: int = 8) -> Array:
 	var ranked: Array = AIHeuristicsRef.rank_place_actions(observation)
 	var candidates: Array = []
-	var capped_limit := min(limit, ranked.size())
+	var capped_limit: int = min(limit, ranked.size())
 	for index in range(capped_limit):
 		var entry: Dictionary = ranked[index]
 		var action: Dictionary = entry.get("action", {})

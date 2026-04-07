@@ -8,7 +8,7 @@ const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
 const MediumAIStrategyRef = preload("res://scripts/ai/MediumAIStrategy.gd")
 
-var _http_request := HTTPRequest.new()
+var _http_request: HTTPRequest = HTTPRequest.new()
 var _pending_request: bool = false
 var _last_observation: Dictionary = {}
 
@@ -28,7 +28,7 @@ func setup(spec: Dictionary, context: Dictionary = {}) -> void:
 
 func request_action(observation: Dictionary) -> void:
 	_last_observation = observation.duplicate(true)
-	var endpoint := String(agent_spec.get("endpoint", "")).strip_edges()
+	var endpoint: String = String(agent_spec.get("endpoint", "")).strip_edges()
 	if endpoint == "":
 		status_changed.emit("RL endpoint missing, using heuristic fallback.")
 		action_ready.emit(_fallback_action(_last_observation))
@@ -39,14 +39,14 @@ func request_action(observation: Dictionary) -> void:
 		_http_request.request_completed.connect(_on_request_completed)
 	_http_request.timeout = float(agent_spec.get("timeout_seconds", 8.0))
 	_pending_request = true
-	var transport_observation := EngineProtocolRef.transport_observation(observation)
-	var payload := {
+	var transport_observation: Dictionary = EngineProtocolRef.transport_observation(observation)
+	var payload: Dictionary = {
 		"agent_type": "rl",
 		"model_id": String(agent_spec.get("model_id", "")),
 		"observation": transport_observation,
 		"legal_action_mask": transport_observation.get("legal_action_mask", []),
 	}
-	var error := _http_request.request(
+	var error: int = _http_request.request(
 		endpoint,
 		PackedStringArray(["Content-Type: application/json"]),
 		HTTPClient.METHOD_POST,
@@ -77,7 +77,7 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 		action_ready.emit(_fallback_action(_last_observation))
 		return
 
-	var action := _action_from_response(parsed)
+	var action: Dictionary = _action_from_response(parsed)
 	if action.is_empty():
 		status_changed.emit("RL service returned an invalid action, using heuristic fallback.")
 		action_ready.emit(_fallback_action(_last_observation))
@@ -108,7 +108,7 @@ func _fallback_action(observation: Dictionary) -> Dictionary:
 
 
 func _fallback_strategy():
-	var difficulty := int(agent_spec.get("fallback_difficulty", MatchConfigRef.AIDifficulty.MEDIUM))
+	var difficulty: int = int(agent_spec.get("fallback_difficulty", MatchConfigRef.AIDifficulty.MEDIUM))
 	match difficulty:
 		MatchConfigRef.AIDifficulty.EASY:
 			return EasyAIStrategyRef.new()

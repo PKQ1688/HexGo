@@ -1,7 +1,6 @@
 class_name NativeMatchEngineBridge
 extends "res://scripts/core/BaseEngineBridge.gd"
 
-const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const EngineProtocolRef = preload("res://scripts/core/EngineProtocol.gd")
 const ScoreCalculatorRef = preload("res://scripts/core/ScoreCalculator.gd")
@@ -33,18 +32,18 @@ func _init(preferred_radius: int = 5) -> void:
 	_board_radius = preferred_radius
 	_board.initialize(_board_radius)
 	backend_status = _build_unavailable_status()
-	var class_name := _resolve_native_class_name()
-	if class_name == "":
+	var native_class_name: String = _resolve_native_class_name()
+	if native_class_name == "":
 		return
-	_native_engine = ClassDB.instantiate(class_name)
+	_native_engine = ClassDB.instantiate(native_class_name)
 	if _native_engine == null:
-		backend_status = "Native engine class '%s' could not be instantiated." % class_name
+		backend_status = "Native engine class '%s' could not be instantiated." % native_class_name
 		return
 	if not _native_engine.has_method("setup_game") or not _native_engine.has_method("consume_events"):
 		_native_engine = null
-		backend_status = "Native engine '%s' does not implement the required bridge contract yet." % class_name
+		backend_status = "Native engine '%s' does not implement the required bridge contract yet." % native_class_name
 		return
-	backend_status = "Using native engine bridge class '%s'." % class_name
+	backend_status = "Using native engine bridge class '%s'." % native_class_name
 	setup_game(preferred_radius)
 
 
@@ -53,9 +52,9 @@ static func is_supported() -> bool:
 
 
 static func _resolve_native_class_name() -> String:
-	for class_name in NATIVE_CLASS_CANDIDATES:
-		if ClassDB.class_exists(class_name):
-			return class_name
+	for candidate in NATIVE_CLASS_CANDIDATES:
+		if ClassDB.class_exists(candidate):
+			return candidate
 	return ""
 
 
@@ -363,9 +362,9 @@ func _rebuild_board(snapshot: Dictionary) -> void:
 		return
 
 	_board.initialize(_board_radius)
-	var ordered_coords := snapshot.get("ordered_coords", [])
-	var cells := snapshot.get("cells", [])
-	var limit := min(ordered_coords.size(), cells.size())
+	var ordered_coords: Array = snapshot.get("ordered_coords", [])
+	var cells: Array = snapshot.get("cells", [])
+	var limit: int = min(ordered_coords.size(), cells.size())
 	for index in range(limit):
 		var coord = _coord_from_value(ordered_coords[index])
 		if coord == null:
@@ -469,9 +468,9 @@ func _board_from_snapshot(snapshot: Dictionary):
 	var board := HexBoardRef.new()
 	var radius := int(snapshot.get("board_radius", _board_radius))
 	board.initialize(radius)
-	var ordered_coords := snapshot.get("ordered_coords", [])
-	var cells := snapshot.get("cells", [])
-	var limit := min(ordered_coords.size(), cells.size())
+	var ordered_coords: Array = snapshot.get("ordered_coords", [])
+	var cells: Array = snapshot.get("cells", [])
+	var limit: int = min(ordered_coords.size(), cells.size())
 	for index in range(limit):
 		var coord = _coord_from_value(ordered_coords[index])
 		if coord == null:

@@ -14,15 +14,15 @@ const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
 @export var think_delay_min: float = 0.0
 @export var think_delay_max: float = 0.0
 
-var game_state = null
+var game_state: GameStateRef = null
 var match_config: Dictionary = MatchConfigRef.default_config()
-var rng := RandomNumberGenerator.new()
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _is_thinking: bool = false
 var _action_codec: ActionCodecRef = ActionCodecRef.new()
 var _agents: Dictionary = {}
 var _pending_agent_player: int = -1
 
-var think_timer := Timer.new()
+var think_timer: Timer = Timer.new()
 
 
 func _ready() -> void:
@@ -32,7 +32,7 @@ func _ready() -> void:
 	add_child(think_timer)
 
 
-func configure(state, config: Dictionary) -> void:
+func configure(state: GameStateRef, config: Dictionary) -> void:
 	cancel_pending_turn()
 	_disconnect_game_state()
 	_clear_agents()
@@ -95,7 +95,7 @@ func submit_move_coord(coord) -> bool:
 
 
 func submit_action_index(action_index: int) -> bool:
-	var action := _action_codec.decode_action_index(action_index)
+	var action: Dictionary = _action_codec.decode_action_index(action_index)
 	if action.is_empty():
 		return false
 	return _submit_action(action, true)
@@ -142,7 +142,7 @@ func _clear_agents() -> void:
 
 func _rebuild_agents() -> void:
 	for player in [GameStateRef.Player.BLACK, GameStateRef.Player.WHITE]:
-		var spec := MatchConfigRef.get_agent_spec(match_config, player)
+		var spec: Dictionary = MatchConfigRef.get_agent_spec(match_config, player)
 		var agent = AgentFactoryRef.create_agent(spec)
 		if agent == null:
 			continue
@@ -193,7 +193,7 @@ func _on_think_timeout() -> void:
 	if game_state == null or game_state.phase != GameStateRef.Phase.WAITING:
 		cancel_pending_turn()
 		return
-	var player := game_state.current_player
+	var player: int = game_state.current_player
 	if MatchConfigRef.is_human_agent(match_config, player):
 		cancel_pending_turn()
 		return
@@ -211,7 +211,7 @@ func _on_agent_action_ready(action: Dictionary, player: int) -> void:
 		return
 	if player != _pending_agent_player:
 		return
-	var normalized := _normalize_action(action)
+	var normalized: Dictionary = _normalize_action(action)
 	_pending_agent_player = -1
 	_finish_thinking()
 	action_ready.emit(normalized)
@@ -234,7 +234,7 @@ func _submit_action(action: Dictionary, require_human_control: bool) -> bool:
 	if game_state.phase != GameStateRef.Phase.WAITING:
 		return false
 
-	var is_human_turn := MatchConfigRef.is_human_agent(match_config, game_state.current_player)
+	var is_human_turn: bool = MatchConfigRef.is_human_agent(match_config, game_state.current_player)
 	if require_human_control and not is_human_turn:
 		return false
 	if not require_human_control and is_human_turn:
@@ -257,11 +257,11 @@ func _normalize_action(action: Dictionary) -> Dictionary:
 		return _pass_action()
 	if action.get("type", "pass") == "move":
 		if action.has("action_index") and not action.has("coord"):
-			var decoded := _action_codec.decode_action_index(int(action["action_index"]))
+			var decoded: Dictionary = _action_codec.decode_action_index(int(action["action_index"]))
 			if not decoded.is_empty():
 				return decoded
 		if action.has("coord"):
-			var encoded := _action_codec.encode_move(action["coord"])
+			var encoded: Dictionary = _action_codec.encode_move(action["coord"])
 			if not encoded.is_empty():
 				return encoded
 	return _pass_action()

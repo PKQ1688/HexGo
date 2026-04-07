@@ -40,14 +40,14 @@ static func default_agent_spec(agent_type: int = AgentType.HUMAN, difficulty: in
 
 
 static func build_agent_spec(agent_type: int, difficulty: int = AIDifficulty.MEDIUM, extra: Dictionary = {}) -> Dictionary:
-	var spec := default_agent_spec(agent_type, difficulty)
+	var spec: Dictionary = default_agent_spec(agent_type, difficulty)
 	for key: String in extra.keys():
 		spec[key] = extra[key]
 	return _sanitize_agent_spec(spec)
 
 
 static func default_config() -> Dictionary:
-	var config := {
+	var config: Dictionary = {
 		"rules": default_rules_config(),
 		"black_agent": default_agent_spec(AgentType.HUMAN, AIDifficulty.MEDIUM),
 		"white_agent": default_agent_spec(AgentType.HEURISTIC, AIDifficulty.MEDIUM),
@@ -60,8 +60,8 @@ static func default_config() -> Dictionary:
 
 
 static func normalize(config: Dictionary = {}) -> Dictionary:
-	var merged := default_config().duplicate(true)
-	var shared_difficulty := int(config.get("ai_difficulty", merged["ai_difficulty"]))
+	var merged: Dictionary = default_config().duplicate(true)
+	var shared_difficulty: int = int(config.get("ai_difficulty", merged["ai_difficulty"]))
 
 	if config.has("rules") and typeof(config["rules"]) == TYPE_DICTIONARY:
 		for key: String in config["rules"].keys():
@@ -96,7 +96,7 @@ static func normalize(config: Dictionary = {}) -> Dictionary:
 
 
 static func get_agent_spec(config: Dictionary, player: int) -> Dictionary:
-	var normalized := normalize(config)
+	var normalized: Dictionary = normalize(config)
 	return normalized["black_agent"] if player == 0 else normalized["white_agent"]
 
 
@@ -117,7 +117,7 @@ static func get_player_control(config: Dictionary, player: int) -> int:
 
 
 static func get_shared_difficulty(config: Dictionary) -> int:
-	var normalized := normalize(config)
+	var normalized: Dictionary = normalize(config)
 	return int(normalized["ai_difficulty"])
 
 
@@ -153,39 +153,39 @@ static func agent_type_option_labels() -> Array:
 
 
 static func player_mode_label(config: Dictionary, player: int) -> String:
-	var spec := get_agent_spec(config, player)
-	var agent_type := int(spec.get("type", AgentType.HUMAN))
+	var spec: Dictionary = get_agent_spec(config, player)
+	var agent_type: int = int(spec.get("type", AgentType.HUMAN))
 	match agent_type:
 		AgentType.HEURISTIC:
 			return "启发式AI（%s）" % difficulty_label(int(spec.get("difficulty", AIDifficulty.MEDIUM)))
 		AgentType.RL:
-			var rl_model := String(spec.get("model_id", "")).strip_edges()
+			var rl_model: String = String(spec.get("model_id", "")).strip_edges()
 			return "RL（%s）" % rl_model if rl_model != "" else "RL"
 		AgentType.LLM:
-			var llm_model := String(spec.get("model_id", "")).strip_edges()
+			var llm_model: String = String(spec.get("model_id", "")).strip_edges()
 			return "LLM（%s）" % llm_model if llm_model != "" else "LLM"
 		_:
 			return "玩家"
 
 
 static func _merge_agent_spec(base_spec: Dictionary, override_spec: Dictionary) -> Dictionary:
-	var merged := base_spec.duplicate(true)
+	var merged: Dictionary = base_spec.duplicate(true)
 	for key: String in override_spec.keys():
 		merged[key] = override_spec[key]
 	return merged
 
 
 static func _sanitize_agent_spec(spec: Dictionary) -> Dictionary:
-	var agent_type := int(spec.get("type", AgentType.HUMAN))
-	var difficulty := int(spec.get("difficulty", AIDifficulty.MEDIUM))
-	var sanitized := default_agent_spec(agent_type, difficulty)
+	var agent_type: int = int(spec.get("type", AgentType.HUMAN))
+	var difficulty: int = int(spec.get("difficulty", AIDifficulty.MEDIUM))
+	var sanitized: Dictionary = default_agent_spec(agent_type, difficulty)
 	for key: String in spec.keys():
 		sanitized[key] = spec[key]
 	sanitized["type"] = agent_type
 	sanitized["difficulty"] = difficulty
 	sanitized["fallback_difficulty"] = int(sanitized.get("fallback_difficulty", difficulty))
-	var model_id := String(sanitized.get("model_id", "")).strip_edges()
-	var endpoint := String(sanitized.get("endpoint", "")).strip_edges()
+	var model_id: String = String(sanitized.get("model_id", "")).strip_edges()
+	var endpoint: String = String(sanitized.get("endpoint", "")).strip_edges()
 	if agent_type == AgentType.RL:
 		if model_id == "":
 			model_id = OS.get_environment("HEXGO_RL_MODEL_ID").strip_edges()
@@ -220,14 +220,14 @@ static func _apply_shared_difficulty_if_needed(agent_spec: Dictionary, provided_
 
 
 static func _sync_legacy_fields_in_place(config: Dictionary) -> void:
-	var black_agent := _sanitize_agent_spec(config.get("black_agent", default_agent_spec(AgentType.HUMAN)))
-	var white_agent := _sanitize_agent_spec(config.get("white_agent", default_agent_spec(AgentType.HEURISTIC)))
+	var black_agent: Dictionary = _sanitize_agent_spec(config.get("black_agent", default_agent_spec(AgentType.HUMAN)))
+	var white_agent: Dictionary = _sanitize_agent_spec(config.get("white_agent", default_agent_spec(AgentType.HEURISTIC)))
 	config["black_agent"] = black_agent
 	config["white_agent"] = white_agent
 	config["black_control"] = PlayerControl.HUMAN if int(black_agent.get("type", AgentType.HUMAN)) == AgentType.HUMAN else PlayerControl.AI
 	config["white_control"] = PlayerControl.HUMAN if int(white_agent.get("type", AgentType.HUMAN)) == AgentType.HUMAN else PlayerControl.AI
 
-	var ai_difficulty := AIDifficulty.MEDIUM
+	var ai_difficulty: int = AIDifficulty.MEDIUM
 	if int(white_agent.get("type", AgentType.HUMAN)) != AgentType.HUMAN:
 		ai_difficulty = int(white_agent.get("difficulty", AIDifficulty.MEDIUM))
 	elif int(black_agent.get("type", AgentType.HUMAN)) != AgentType.HUMAN:

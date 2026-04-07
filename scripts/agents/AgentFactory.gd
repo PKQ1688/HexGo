@@ -8,7 +8,7 @@ const RLAgentRef = preload("res://scripts/agents/RLAgent.gd")
 
 
 static func create_agent(agent_spec: Dictionary):
-	var agent_type := int(agent_spec.get("type", MatchConfigRef.AgentType.HUMAN))
+	var agent_type: int = int(agent_spec.get("type", MatchConfigRef.AgentType.HUMAN))
 	match agent_type:
 		MatchConfigRef.AgentType.HEURISTIC:
 			return HeuristicAgentRef.new()
