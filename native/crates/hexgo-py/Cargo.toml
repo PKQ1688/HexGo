@@ -1,0 +1,11 @@
+[package]
+name = "hexgo-py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hexgo_py"
+path = "src/lib.rs"
+
+[dependencies]
+hexgo-core = { path = "../hexgo-core" }

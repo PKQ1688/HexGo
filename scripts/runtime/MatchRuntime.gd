@@ -72,13 +72,19 @@ func get_action_codec() -> ActionCodecRef:
 func build_observation() -> Dictionary:
 	if game_state == null:
 		return {}
-	return game_state.build_observation(_action_codec)
+	return game_state.build_observation(_action_codec, match_config.get("rules", {}))
 
 
 func legal_action_mask() -> Array:
 	if game_state == null:
 		return []
 	return _action_codec.legal_action_mask(game_state)
+
+
+func get_engine_backend_info() -> Dictionary:
+	if game_state == null or not game_state.has_method("get_engine_backend_info"):
+		return {}
+	return game_state.get_engine_backend_info()
 
 
 func submit_move_coord(coord) -> bool:

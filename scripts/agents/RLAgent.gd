@@ -2,6 +2,7 @@ class_name RLAgent
 extends "res://scripts/agents/BaseAgent.gd"
 
 const EasyAIStrategyRef = preload("res://scripts/ai/EasyAIStrategy.gd")
+const EngineProtocolRef = preload("res://scripts/core/EngineProtocol.gd")
 const HardAIStrategyRef = preload("res://scripts/ai/HardAIStrategy.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
@@ -38,11 +39,12 @@ func request_action(observation: Dictionary) -> void:
 		_http_request.request_completed.connect(_on_request_completed)
 	_http_request.timeout = float(agent_spec.get("timeout_seconds", 8.0))
 	_pending_request = true
+	var transport_observation := EngineProtocolRef.transport_observation(observation)
 	var payload := {
 		"agent_type": "rl",
 		"model_id": String(agent_spec.get("model_id", "")),
-		"observation": observation,
-		"legal_action_mask": observation.get("legal_action_mask", []),
+		"observation": transport_observation,
+		"legal_action_mask": transport_observation.get("legal_action_mask", []),
 	}
 	var error := _http_request.request(
 		endpoint,

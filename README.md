@@ -116,3 +116,26 @@ tests/                  headless 测试脚本
 - 提供更多棋盘尺寸与开局配置
 - 为 AI 增加更强的搜索或评估函数
 - 补充截图、GIF 或录屏到 README
+
+## Native Core Bootstrap
+
+仓库里现在已经新增 `native/` 工作区，用来承载“同一套规则内核，多种外壳”的方案：
+
+- `native/crates/hexgo-core`：共享原生规则内核
+- `native/crates/hexgo-godot`：未来的 Godot GDExtension 壳层
+- `native/crates/hexgo-py`：未来的 Python 绑定壳层
+
+当前阶段的重点不是替换现有 Godot 逻辑，而是先冻结共享协议并建立 parity 基线：
+
+```bash
+godot --path . --headless -s tests/export_shared_engine_fixtures.gd
+cargo test --manifest-path native/Cargo.toml -p hexgo-core
+```
+
+第一条命令会导出 `tests/fixtures/shared_engine/parity_cases.json`，后续 Rust、Godot 壳层和 Python 环境都需要对齐这份规则夹具。
+
+在 Godot 侧，`GameState.gd` 现在已经切成“native 优先，GDScript 回退”的桥接模式：
+
+- 如果未来注册了 `HexGoNativeEngine` 或 `HexGoNativeMatchEngine` 这类 GDExtension 类，`GameState` 会优先使用它
+- 如果原生桥不可用，`GameState` 会自动回退到当前的 GDScript 规则实现
+- 回退状态可以通过 `GameState.get_engine_backend_info()` 或 `MatchRuntime.get_engine_backend_info()` 读取

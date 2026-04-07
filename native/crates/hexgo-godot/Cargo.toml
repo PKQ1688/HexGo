@@ -1,0 +1,13 @@
+[package]
+name = "hexgo-godot"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hexgo_godot"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+godot = { version = "0.5.0", features = ["api-4-5"] }
+hexgo-core = { path = "../hexgo-core" }

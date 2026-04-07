@@ -2,6 +2,7 @@ class_name LLMAgent
 extends "res://scripts/agents/BaseAgent.gd"
 
 const CandidateGeneratorRef = preload("res://scripts/agents/CandidateGenerator.gd")
+const EngineProtocolRef = preload("res://scripts/core/EngineProtocol.gd")
 const EasyAIStrategyRef = preload("res://scripts/ai/EasyAIStrategy.gd")
 const HardAIStrategyRef = preload("res://scripts/ai/HardAIStrategy.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
@@ -40,12 +41,13 @@ func request_action(observation: Dictionary) -> void:
 	_http_request.timeout = float(agent_spec.get("timeout_seconds", 8.0))
 	_pending_request = true
 	var action_codec = get_action_codec()
+	var transport_observation := EngineProtocolRef.transport_observation(observation)
 	var payload := {
 		"agent_type": "llm",
 		"model_id": String(agent_spec.get("model_id", "")),
 		"temperature": float(agent_spec.get("temperature", 0.2)),
-		"observation": observation,
-		"legal_action_mask": observation.get("legal_action_mask", []),
+		"observation": transport_observation,
+		"legal_action_mask": transport_observation.get("legal_action_mask", []),
 		"candidates": CandidateGeneratorRef.top_candidates(observation, action_codec, int(agent_spec.get("candidate_count", 8))),
 	}
 	var error := _http_request.request(

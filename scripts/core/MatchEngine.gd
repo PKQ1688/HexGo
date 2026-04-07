@@ -2,6 +2,7 @@ class_name MatchEngine
 extends RefCounted
 
 const CaptureResolverRef = preload("res://scripts/core/CaptureResolver.gd")
+const EngineProtocolRef = preload("res://scripts/core/EngineProtocol.gd")
 const HexBoardRef = preload("res://scripts/core/HexBoard.gd")
 const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const ScoreCalculatorRef = preload("res://scripts/core/ScoreCalculator.gd")
@@ -283,22 +284,8 @@ func build_turn_snapshot() -> Dictionary:
 	}
 
 
-func build_observation(action_codec = null) -> Dictionary:
-	var observation := build_turn_snapshot()
-	var ordered_coords: Array = board.all_coords
-	if action_codec != null and action_codec.has_method("get_ordered_coords"):
-		ordered_coords = action_codec.get_ordered_coords()
-
-	var cells: Array = []
-	for coord in ordered_coords:
-		cells.append(board.get_cell(coord))
-	observation["cells"] = cells
-
-	if action_codec != null and action_codec.has_method("legal_action_mask"):
-		observation["legal_action_mask"] = action_codec.legal_action_mask(self)
-		observation["pass_action_index"] = action_codec.pass_action_index()
-
-	return observation
+func build_observation(action_codec = null, rules_config: Dictionary = {}) -> Dictionary:
+	return EngineProtocolRef.serialize_observation(self, action_codec, rules_config)
 
 
 func consume_events() -> Array:
