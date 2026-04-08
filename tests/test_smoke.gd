@@ -54,6 +54,8 @@ func _run() -> void:
 
 	await _test_capture_visuals_stay_in_sync(scene)
 	await process_frame
+	await _test_window_zoom_shortcuts(scene)
+	await process_frame
 	print("Smoke scene test passed.")
 	quit()
 
@@ -88,6 +90,48 @@ func _test_capture_visuals_stay_in_sync(scene: PackedScene) -> void:
 	var rendered_pieces: int = main.board_view.piece_renderer.pieces_container.get_child_count()
 	_assert(rendered_pieces == expected_pieces, "Captured stones should not remain rendered. Expected %d rendered pieces, got %d." % [expected_pieces, rendered_pieces])
 
+	main.queue_free()
+	await process_frame
+
+
+func _test_window_zoom_shortcuts(scene: PackedScene) -> void:
+	var main = scene.instantiate()
+	root.add_child(main)
+	await process_frame
+
+	var root_window = main.get_tree().root
+	var original_scale: float = root_window.content_scale_factor
+	root_window.content_scale_factor = 1.0
+	main._center_board()
+
+	var zoom_in_event := InputEventKey.new()
+	zoom_in_event.pressed = true
+	zoom_in_event.keycode = KEY_EQUAL
+	zoom_in_event.meta_pressed = true
+	zoom_in_event.ctrl_pressed = true
+	_assert(main._apply_zoom_shortcut(zoom_in_event), "Cmd/Ctrl + = should trigger UI zoom in.")
+	_assert(is_equal_approx(root_window.content_scale_factor, 1.1), "Cmd/Ctrl + = should increase UI zoom scale to 1.1.")
+
+	var zoom_out_event := InputEventKey.new()
+	zoom_out_event.pressed = true
+	zoom_out_event.keycode = KEY_MINUS
+	zoom_out_event.meta_pressed = true
+	zoom_out_event.ctrl_pressed = true
+	_assert(main._apply_zoom_shortcut(zoom_out_event), "Cmd/Ctrl + - should trigger UI zoom out.")
+	_assert(is_equal_approx(root_window.content_scale_factor, 1.0), "Cmd/Ctrl + - should restore UI zoom scale to 1.0.")
+
+	root_window.content_scale_factor = 1.3
+	main._center_board()
+	var reset_event := InputEventKey.new()
+	reset_event.pressed = true
+	reset_event.keycode = KEY_0
+	reset_event.meta_pressed = true
+	reset_event.ctrl_pressed = true
+	_assert(main._apply_zoom_shortcut(reset_event), "Cmd/Ctrl + 0 should reset UI zoom.")
+	_assert(is_equal_approx(root_window.content_scale_factor, 1.0), "Cmd/Ctrl + 0 should reset UI zoom scale to 1.0.")
+
+	root_window.content_scale_factor = original_scale
+	main._center_board()
 	main.queue_free()
 	await process_frame
 

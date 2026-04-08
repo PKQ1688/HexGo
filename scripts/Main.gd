@@ -7,6 +7,11 @@ const GameStateRef = preload("res://scripts/core/GameState.gd")
 const MatchSetupDialogRef = preload("res://scripts/ui/MatchSetupDialog.gd")
 const HexLayout = preload("res://scripts/render/HexLayout.gd")
 
+const UI_ZOOM_DEFAULT: float = 1.0
+const UI_ZOOM_MIN: float = 0.8
+const UI_ZOOM_MAX: float = 1.6
+const UI_ZOOM_STEP: float = 0.1
+
 @export var board_radius: int = 5
 @export var hex_size: float = 36.0
 
@@ -23,6 +28,7 @@ var match_config: Dictionary = MatchConfigRef.default_config()
 
 func _ready() -> void:
 	layout = HexLayout.new(hex_size, Vector2.ZERO)
+	set_process_unhandled_key_input(true)
 	_connect_signals()
 	_center_board()
 	get_viewport().size_changed.connect(_center_board)
@@ -51,8 +57,47 @@ func _connect_signals() -> void:
 	game_state.game_over.connect(_on_game_over)
 
 
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	if _apply_zoom_shortcut(event):
+		get_viewport().set_input_as_handled()
+
+
 func _center_board() -> void:
 	board_view.position = get_viewport().get_visible_rect().size / 2.0
+
+
+func _apply_zoom_shortcut(event: InputEventKey) -> bool:
+	if not event.pressed or event.echo:
+		return false
+	if not event.is_command_or_control_pressed():
+		return false
+
+	match event.keycode:
+		KEY_EQUAL, KEY_KP_ADD:
+			_adjust_ui_zoom(UI_ZOOM_STEP)
+			return true
+		KEY_MINUS, KEY_KP_SUBTRACT:
+			_adjust_ui_zoom(-UI_ZOOM_STEP)
+			return true
+		KEY_0, KEY_KP_0:
+			_set_ui_zoom(UI_ZOOM_DEFAULT)
+			return true
+
+	return false
+
+
+func _adjust_ui_zoom(delta: float) -> void:
+	_set_ui_zoom(get_tree().root.content_scale_factor + delta)
+
+
+func _set_ui_zoom(scale_factor: float) -> void:
+	var next_scale := snappedf(clampf(scale_factor, UI_ZOOM_MIN, UI_ZOOM_MAX), 0.05)
+	if is_equal_approx(get_tree().root.content_scale_factor, next_scale):
+		return
+	get_tree().root.content_scale_factor = next_scale
+	_center_board()
 
 
 func _on_board_initialized(board) -> void:
