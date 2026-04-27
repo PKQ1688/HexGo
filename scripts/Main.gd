@@ -1,9 +1,9 @@
 class_name Main
 extends Node
 
-const AIControllerRef = preload("res://scripts/ai/AIController.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
 const GameStateRef = preload("res://scripts/core/GameState.gd")
+const MatchRuntimeRef = preload("res://scripts/runtime/MatchRuntime.gd")
 const MatchSetupDialogRef = preload("res://scripts/ui/MatchSetupDialog.gd")
 const HexLayout = preload("res://scripts/render/HexLayout.gd")
 
@@ -19,7 +19,7 @@ var layout: HexLayout
 var match_config: Dictionary = MatchConfigRef.default_config()
 
 @onready var game_state = $GameState
-@onready var ai_controller: AIControllerRef = $AIController
+@onready var match_runtime: MatchRuntimeRef = $MatchRuntime
 @onready var board_view = $Board
 @onready var hud = $HUD
 @onready var end_game_dialog = $EndGameDialog
@@ -47,7 +47,7 @@ func _connect_signals() -> void:
 	end_game_dialog.restart_requested.connect(_on_restart_requested)
 	end_game_dialog.quit_requested.connect(_on_quit_requested)
 	match_setup_dialog.start_requested.connect(_on_match_start_requested)
-	ai_controller.thinking_changed.connect(_on_ai_thinking_changed)
+	match_runtime.thinking_changed.connect(_on_ai_thinking_changed)
 
 	game_state.board_initialized.connect(_on_board_initialized)
 	game_state.piece_placed.connect(board_view.piece_renderer.place_piece)
@@ -115,7 +115,7 @@ func _on_cell_clicked(coord) -> void:
 	if game_state.is_scoring_phase():
 		game_state.toggle_dead_group(coord)
 	else:
-		ai_controller.submit_move_coord(coord)
+		match_runtime.submit_move_coord(coord)
 
 
 func _on_cell_hovered(coord) -> void:
@@ -130,7 +130,7 @@ func _on_preview_summary_changed(summary: Dictionary) -> void:
 
 
 func _on_pass_pressed() -> void:
-	ai_controller.submit_pass()
+	match_runtime.submit_pass()
 
 
 func _on_turn_completed(player: int, _scores: Dictionary) -> void:
@@ -145,18 +145,18 @@ func _on_game_over(scores: Dictionary) -> void:
 
 
 func _on_restart_requested() -> void:
-	ai_controller.cancel_pending_turn()
+	match_runtime.cancel_pending_turn()
 	hud.set_ai_thinking(false)
 	board_view.set_interaction_enabled(false)
 	match_setup_dialog.show_dialog(match_config)
 
 
 func _on_resume_play_requested() -> void:
-	ai_controller.resume_play()
+	match_runtime.resume_play()
 
 
 func _on_confirm_score_requested() -> void:
-	ai_controller.confirm_scoring()
+	match_runtime.confirm_scoring()
 
 
 func _on_quit_requested() -> void:
@@ -167,7 +167,7 @@ func start_match(config: Dictionary = {}) -> void:
 	match_config = MatchConfigRef.normalize(config)
 	hud.set_match_config(match_config)
 	hud.set_ai_thinking(false)
-	ai_controller.configure(game_state, match_config)
+	match_runtime.configure(game_state, match_config)
 	match_setup_dialog.hide_dialog()
 	board_view.set_interaction_enabled(false)
 	game_state.setup_game(board_radius)

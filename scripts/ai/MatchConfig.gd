@@ -23,6 +23,7 @@ enum AgentType {
 static func default_rules_config() -> Dictionary:
 	return {
 		"scoring_mode": "manual_review",
+		"max_turns": 0,
 	}
 
 
@@ -36,6 +37,7 @@ static func default_agent_spec(agent_type: int = AgentType.HUMAN, difficulty: in
 		"candidate_count": 8,
 		"temperature": 0.2,
 		"timeout_seconds": 8.0,
+		"use_environment": true,
 	}
 
 
@@ -121,53 +123,6 @@ static func get_shared_difficulty(config: Dictionary) -> int:
 	return int(normalized["ai_difficulty"])
 
 
-static func difficulty_label(difficulty: int) -> String:
-	match difficulty:
-		AIDifficulty.EASY:
-			return "简单"
-		AIDifficulty.HARD:
-			return "困难"
-		_:
-			return "中等"
-
-
-static func agent_type_label(agent_type: int) -> String:
-	match agent_type:
-		AgentType.HEURISTIC:
-			return "启发式AI"
-		AgentType.RL:
-			return "RL"
-		AgentType.LLM:
-			return "LLM"
-		_:
-			return "玩家"
-
-
-static func agent_type_option_labels() -> Array:
-	return [
-		agent_type_label(AgentType.HUMAN),
-		agent_type_label(AgentType.HEURISTIC),
-		agent_type_label(AgentType.RL),
-		agent_type_label(AgentType.LLM),
-	]
-
-
-static func player_mode_label(config: Dictionary, player: int) -> String:
-	var spec: Dictionary = get_agent_spec(config, player)
-	var agent_type: int = int(spec.get("type", AgentType.HUMAN))
-	match agent_type:
-		AgentType.HEURISTIC:
-			return "启发式AI（%s）" % difficulty_label(int(spec.get("difficulty", AIDifficulty.MEDIUM)))
-		AgentType.RL:
-			var rl_model: String = String(spec.get("model_id", "")).strip_edges()
-			return "RL（%s）" % rl_model if rl_model != "" else "RL"
-		AgentType.LLM:
-			var llm_model: String = String(spec.get("model_id", "")).strip_edges()
-			return "LLM（%s）" % llm_model if llm_model != "" else "LLM"
-		_:
-			return "玩家"
-
-
 static func _merge_agent_spec(base_spec: Dictionary, override_spec: Dictionary) -> Dictionary:
 	var merged: Dictionary = base_spec.duplicate(true)
 	for key: String in override_spec.keys():
@@ -186,18 +141,20 @@ static func _sanitize_agent_spec(spec: Dictionary) -> Dictionary:
 	sanitized["fallback_difficulty"] = int(sanitized.get("fallback_difficulty", difficulty))
 	var model_id: String = String(sanitized.get("model_id", "")).strip_edges()
 	var endpoint: String = String(sanitized.get("endpoint", "")).strip_edges()
-	if agent_type == AgentType.RL:
+	var use_environment: bool = bool(sanitized.get("use_environment", true))
+	if use_environment and agent_type == AgentType.RL:
 		if model_id == "":
 			model_id = OS.get_environment("HEXGO_RL_MODEL_ID").strip_edges()
 		if endpoint == "":
 			endpoint = OS.get_environment("HEXGO_RL_ENDPOINT").strip_edges()
-	elif agent_type == AgentType.LLM:
+	elif use_environment and agent_type == AgentType.LLM:
 		if model_id == "":
 			model_id = OS.get_environment("HEXGO_LLM_MODEL_ID").strip_edges()
 		if endpoint == "":
 			endpoint = OS.get_environment("HEXGO_LLM_ENDPOINT").strip_edges()
 	sanitized["model_id"] = model_id
 	sanitized["endpoint"] = endpoint
+	sanitized["use_environment"] = use_environment
 	sanitized["candidate_count"] = max(1, int(sanitized.get("candidate_count", 8)))
 	sanitized["temperature"] = float(sanitized.get("temperature", 0.2))
 	sanitized["timeout_seconds"] = maxf(0.5, float(sanitized.get("timeout_seconds", 8.0)))

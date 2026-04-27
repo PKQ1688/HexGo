@@ -124,6 +124,9 @@ static func score_position(snapshot: Dictionary, perspective_player: int) -> flo
 
 
 static func should_pass(snapshot: Dictionary, best_score: float) -> bool:
+	if should_force_pass(snapshot):
+		return true
+
 	var board: HexBoardRef = snapshot["board"]
 	var move_count: int = int(snapshot.get("move_count", 0))
 	var total_cells: int = max(1, board.all_coords.size())
@@ -136,6 +139,20 @@ static func should_pass(snapshot: Dictionary, best_score: float) -> bool:
 	var player: int = int(snapshot["current_player"])
 	var other: int = other_player(player)
 	return best_score < 14.0 and int(scores.get(player, 0)) >= int(scores.get(other, 0))
+
+
+static func should_force_pass(snapshot: Dictionary) -> bool:
+	var board: HexBoardRef = snapshot.get("board")
+	if board == null:
+		return false
+	var move_count := int(snapshot.get("move_count", 0))
+	var configured_limit := int(snapshot.get("max_turns", 0))
+	var rules = snapshot.get("rules", {})
+	if typeof(rules) == TYPE_DICTIONARY:
+		configured_limit = int(rules.get("max_turns", configured_limit))
+	if configured_limit > 0:
+		return move_count >= configured_limit
+	return move_count >= board.all_coords.size() * 6
 
 
 static func simulate_pass(snapshot: Dictionary) -> Dictionary:

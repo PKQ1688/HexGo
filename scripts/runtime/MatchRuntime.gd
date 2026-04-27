@@ -21,6 +21,7 @@ var _is_thinking: bool = false
 var _action_codec: ActionCodecRef = ActionCodecRef.new()
 var _agents: Dictionary = {}
 var _pending_agent_player: int = -1
+var _forcing_turn_limit: bool = false
 
 var think_timer: Timer = Timer.new()
 
@@ -159,6 +160,8 @@ func _on_board_initialized(board) -> void:
 
 
 func _on_turn_completed(_player: int, _scores: Dictionary) -> void:
+	if _forcing_turn_limit:
+		return
 	_maybe_schedule_agent_turn()
 
 
@@ -216,8 +219,10 @@ func _on_agent_action_ready(action: Dictionary, player: int) -> void:
 	_finish_thinking()
 	action_ready.emit(normalized)
 	if _submit_action(normalized, false):
+		_enforce_turn_limit()
 		return
-	_submit_action(_pass_action(), false)
+	if _submit_action(_pass_action(), false):
+		_enforce_turn_limit()
 
 
 func _on_agent_status_changed(status, player: int) -> void:
@@ -278,3 +283,36 @@ func _finish_thinking() -> void:
 	if _is_thinking:
 		_is_thinking = false
 		thinking_changed.emit(false)
+
+
+func _enforce_turn_limit() -> void:
+	if game_state == null or game_state.phase != GameStateRef.Phase.WAITING:
+		return
+	var max_turns := _effective_max_turns()
+	if max_turns <= 0 or game_state.move_history.size() < max_turns:
+		return
+
+	cancel_pending_turn()
+	_forcing_turn_limit = true
+	agent_status_changed.emit(game_state.current_player, "Turn limit reached; entering scoring.")
+	game_state.record_pass()
+	if game_state.phase == GameStateRef.Phase.WAITING:
+		game_state.record_pass()
+	_forcing_turn_limit = false
+	cancel_pending_turn()
+
+
+func _effective_max_turns() -> int:
+	var configured := int(match_config.get("rules", {}).get("max_turns", 0))
+	if configured > 0:
+		return configured
+	if _both_players_autonomous() and _action_codec.action_count() > 1:
+		return _action_codec.action_count() * 6
+	return 0
+
+
+func _both_players_autonomous() -> bool:
+	return (
+		MatchConfigRef.is_autonomous_agent(match_config, GameStateRef.Player.BLACK)
+		and MatchConfigRef.is_autonomous_agent(match_config, GameStateRef.Player.WHITE)
+	)

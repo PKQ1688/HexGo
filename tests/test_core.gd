@@ -53,10 +53,14 @@ func _test_board_size() -> void:
 func _test_runtime_scripts_load() -> void:
 	var match_config_script = load("res://scripts/ai/MatchConfig.gd")
 	_assert(match_config_script != null, "MatchConfig script should load successfully.")
+	var match_config_labels_script = load("res://scripts/ui/MatchConfigLabels.gd")
+	_assert(match_config_labels_script != null, "MatchConfigLabels script should load successfully.")
 	var agent_factory_script = load("res://scripts/agents/AgentFactory.gd")
 	_assert(agent_factory_script != null, "AgentFactory script should load successfully.")
 	var runtime_script = load("res://scripts/runtime/MatchRuntime.gd")
 	_assert(runtime_script != null, "MatchRuntime script should load successfully.")
+	var native_bridge_codec_script = load("res://scripts/core/NativeBridgeCodec.gd")
+	_assert(native_bridge_codec_script != null, "NativeBridgeCodec script should load successfully.")
 
 
 func _test_engine_protocol_observation() -> void:

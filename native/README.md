@@ -21,6 +21,14 @@
 cargo test --manifest-path native/Cargo.toml -p hexgo-core
 ```
 
+Godot 的 GDExtension 配置默认不启用，避免未构建原生库时启动项目报错。
+如果要启用 Godot 原生桥接，先构建动态库，再复制本地配置：
+
+```bash
+cargo build --manifest-path native/Cargo.toml -p hexgo-godot
+cp native/hexgo_native.gdextension.example native/hexgo_native.gdextension
+```
+
 同时建议先导出一版当前 GDScript 规则夹具：
 
 ```bash

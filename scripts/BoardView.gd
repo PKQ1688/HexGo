@@ -1,4 +1,4 @@
-class_name Board
+class_name BoardView
 extends Node2D
 
 const BoardRendererRef = preload("res://scripts/render/BoardRenderer.gd")

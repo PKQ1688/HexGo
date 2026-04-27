@@ -67,7 +67,7 @@ godot --path .
 - `中等`：直接选择启发式评分最佳的着手，必要时会主动 `Pass`
 - `困难`：在启发式候选基础上做更深一层的搜索评估，优先级更稳定
 
-AI 相关代码位于 `scripts/ai/`，由 `AIController.gd` 统一调度。
+AI 策略位于 `scripts/ai/`，代理实现位于 `scripts/agents/`，对局中的自动行动由 `scripts/runtime/MatchRuntime.gd` 统一调度。
 
 ## 测试
 
@@ -95,10 +95,13 @@ godot --path . --headless -s tests/test_ai.gd
 scenes/                 可直接运行的场景
 scenes/UI/              HUD、对局设置、终局弹窗等 UI 场景
 scripts/core/           纯规则与状态管理，不依赖场景节点
+scripts/BoardView.gd    棋盘场景门面，聚合渲染、输入与交互状态
 scripts/render/         棋盘、棋子、领地、预览与威胁的可视化
 scripts/input/          鼠标输入与落点映射
 scripts/ui/             HUD、Pass、对局设置、结算面板逻辑
-scripts/ai/             AI 控制器与难度策略
+scripts/ai/             启发式 AI 策略与对局配置
+scripts/agents/         玩家、启发式、RL、LLM 等代理封装
+scripts/runtime/        对局运行时与代理调度
 tests/                  headless 测试脚本
 ```
 

@@ -7,6 +7,7 @@ signal confirm_score_requested
 
 const GameStateRef = preload("res://scripts/core/GameState.gd")
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
+const MatchConfigLabelsRef = preload("res://scripts/ui/MatchConfigLabels.gd")
 
 @onready var player_indicator: Label = $MarginContainer/PanelContainer/VBoxContainer/PlayerIndicator
 @onready var mode_label: Label = $MarginContainer/PanelContainer/VBoxContainer/ModeLabel
@@ -39,8 +40,8 @@ func _ready() -> void:
 func set_match_config(config: Dictionary) -> void:
 	match_config = MatchConfigRef.normalize(config)
 	mode_label.text = "黑方：%s    白方：%s" % [
-		MatchConfigRef.player_mode_label(match_config, GameStateRef.Player.BLACK),
-		MatchConfigRef.player_mode_label(match_config, GameStateRef.Player.WHITE),
+		MatchConfigLabelsRef.player_mode_label(match_config, GameStateRef.Player.BLACK),
+		MatchConfigLabelsRef.player_mode_label(match_config, GameStateRef.Player.WHITE),
 	]
 
 

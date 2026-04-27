@@ -1,8 +1,8 @@
 class_name NativeMatchEngineBridge
 extends "res://scripts/core/BaseEngineBridge.gd"
 
-const HexCoordRef = preload("res://scripts/core/HexCoord.gd")
 const EngineProtocolRef = preload("res://scripts/core/EngineProtocol.gd")
+const NativeBridgeCodecRef = preload("res://scripts/core/NativeBridgeCodec.gd")
 const ScoreCalculatorRef = preload("res://scripts/core/ScoreCalculator.gd")
 const ThreatAnalyzerRef = preload("res://scripts/core/ThreatAnalyzer.gd")
 
@@ -200,13 +200,13 @@ func can_pass() -> bool:
 func can_place_at(coord) -> bool:
 	if not is_available():
 		return false
-	return bool(_native_engine.call("can_place_at", _native_coord_argument(coord)))
+	return bool(_native_engine.call("can_place_at", NativeBridgeCodecRef.native_coord_argument(coord)))
 
 
 func execute_turn(coord) -> bool:
 	if not is_available():
 		return false
-	var success := bool(_native_engine.call("execute_turn", _native_coord_argument(coord)))
+	var success := bool(_native_engine.call("execute_turn", NativeBridgeCodecRef.native_coord_argument(coord)))
 	_sync_from_native()
 	return success
 
@@ -228,13 +228,13 @@ func get_visible_threats() -> Dictionary:
 func can_toggle_dead_at(coord) -> bool:
 	if not is_available():
 		return false
-	return bool(_native_engine.call("can_toggle_dead_at", _native_coord_argument(coord)))
+	return bool(_native_engine.call("can_toggle_dead_at", NativeBridgeCodecRef.native_coord_argument(coord)))
 
 
 func toggle_dead_group(coord) -> bool:
 	if not is_available():
 		return false
-	var success := bool(_native_engine.call("toggle_dead_group", _native_coord_argument(coord)))
+	var success := bool(_native_engine.call("toggle_dead_group", NativeBridgeCodecRef.native_coord_argument(coord)))
 	_sync_from_native()
 	return success
 
@@ -267,7 +267,7 @@ func get_scoring_board():
 		if scoring_board != null and scoring_board is HexBoardRef:
 			return scoring_board
 		if typeof(scoring_board) == TYPE_DICTIONARY:
-			var decoded_board = _board_from_snapshot(scoring_board)
+			var decoded_board = NativeBridgeCodecRef.board_from_snapshot(scoring_board, _board_radius)
 			if decoded_board != null:
 				return decoded_board
 	return ScoreCalculatorRef.build_scoring_board(_board, _marked_dead_stones)
@@ -305,7 +305,7 @@ func consume_events() -> Array:
 	var events = _native_engine.call("consume_events")
 	if typeof(events) != TYPE_ARRAY:
 		return []
-	return _hydrate_events(events)
+	return NativeBridgeCodecRef.hydrate_events(events, _board)
 
 
 func _push_state_to_native() -> void:
@@ -324,159 +324,40 @@ func _sync_from_native() -> void:
 
 
 func _export_state_for_native() -> Dictionary:
+	return NativeBridgeCodecRef.export_state(_current_state(), get_marked_dead_keys())
+
+
+func _import_state(snapshot: Dictionary) -> void:
+	var state: Dictionary = NativeBridgeCodecRef.import_state(snapshot, _current_state())
+	_board = state["board"]
+	_board_radius = int(state["board_radius"])
+	_current_player = int(state["current_player"])
+	_phase = int(state["phase"])
+	_consecutive_passes = int(state["consecutive_passes"])
+	_move_history = state["move_history"]
+	_scores = state["scores"]
+	_score_breakdown = state["score_breakdown"]
+	_marked_dead_stones = state["marked_dead_stones"]
+	_previous_board_signature = String(state["previous_board_signature"])
+	_current_board_signature = String(state["current_board_signature"])
+	_resume_player_after_scoring = int(state["resume_player_after_scoring"])
+
+
+func _current_state() -> Dictionary:
 	return {
+		"board": _board,
 		"board_radius": _board_radius,
 		"current_player": _current_player,
 		"phase": _phase,
 		"consecutive_passes": _consecutive_passes,
-		"move_history": _move_history.duplicate(true),
-		"scores": _scores.duplicate(true),
-		"score_breakdown": _score_breakdown.duplicate(true),
-		"marked_dead_keys": get_marked_dead_keys(),
+		"move_history": _move_history,
+		"scores": _scores,
+		"score_breakdown": _score_breakdown,
+		"marked_dead_stones": _marked_dead_stones,
 		"previous_board_signature": _previous_board_signature,
 		"current_board_signature": _current_board_signature,
 		"resume_player_after_scoring": _resume_player_after_scoring,
 	}
-
-
-func _import_state(snapshot: Dictionary) -> void:
-	_board_radius = int(snapshot.get("board_radius", _board_radius))
-	_current_player = int(snapshot.get("current_player", _current_player))
-	_phase = int(snapshot.get("phase", snapshot.get("phase_id", _phase)))
-	_consecutive_passes = int(snapshot.get("consecutive_passes", _consecutive_passes))
-	_move_history = snapshot.get("move_history", _move_history).duplicate(true)
-	_previous_board_signature = String(snapshot.get("previous_board_signature", _previous_board_signature))
-	_current_board_signature = String(snapshot.get("current_board_signature", _current_board_signature))
-	_resume_player_after_scoring = int(snapshot.get("resume_player_after_scoring", _resume_player_after_scoring))
-	_scores = _decode_scores(snapshot.get("scores", _scores))
-	_score_breakdown = _decode_score_breakdown(snapshot.get("score_breakdown", _score_breakdown))
-	_marked_dead_stones = _decode_marked_dead_stones(snapshot.get("marked_dead_keys", _marked_dead_stones.keys()))
-	_rebuild_board(snapshot)
-
-
-func _rebuild_board(snapshot: Dictionary) -> void:
-	var source_board = snapshot.get("board")
-	if source_board != null and source_board is HexBoardRef:
-		_board = source_board.clone()
-		_board_radius = _board.board_radius
-		return
-
-	_board.initialize(_board_radius)
-	var ordered_coords: Array = snapshot.get("ordered_coords", [])
-	var cells: Array = snapshot.get("cells", [])
-	var limit: int = min(ordered_coords.size(), cells.size())
-	for index in range(limit):
-		var coord = _coord_from_value(ordered_coords[index])
-		if coord == null:
-			continue
-		_board.set_cell(coord, int(cells[index]))
-
-
-func _hydrate_events(events: Array) -> Array:
-	var hydrated: Array = []
-	for raw_event in events:
-		if typeof(raw_event) != TYPE_DICTIONARY:
-			continue
-		var event: Dictionary = raw_event.duplicate(true)
-		if event.has("coord"):
-			event["coord"] = _coord_from_value(event["coord"])
-		if event.has("coords"):
-			event["coords"] = _coords_from_value(event["coords"])
-		if event.has("scores"):
-			event["scores"] = _decode_scores(event["scores"])
-		if (event.has("board_radius") or String(event.get("type", "")) == "board_initialized") and not event.has("board"):
-			event["board"] = _board
-		hydrated.append(event)
-	return hydrated
-
-
-func _decode_scores(raw_scores) -> Dictionary:
-	if typeof(raw_scores) != TYPE_DICTIONARY:
-		return {0: 0, 1: 0}
-	if raw_scores.has(0) or raw_scores.has(1):
-		return raw_scores.duplicate(true)
-	return {
-		0: int(raw_scores.get("black", 0)),
-		1: int(raw_scores.get("white", 0)),
-	}
-
-
-func _decode_score_breakdown(raw_breakdown) -> Dictionary:
-	if typeof(raw_breakdown) != TYPE_DICTIONARY:
-		return {}
-	if raw_breakdown.has(0) or raw_breakdown.has(1):
-		return raw_breakdown.duplicate(true)
-	return {
-		0: _decode_player_breakdown(raw_breakdown.get("black", {})),
-		1: _decode_player_breakdown(raw_breakdown.get("white", {})),
-	}
-
-
-func _decode_player_breakdown(entry) -> Dictionary:
-	if typeof(entry) != TYPE_DICTIONARY:
-		return {"pieces": 0, "territory": 0, "total": 0}
-	return {
-		"pieces": int(entry.get("pieces", 0)),
-		"territory": int(entry.get("territory", 0)),
-		"total": int(entry.get("total", 0)),
-	}
-
-
-func _decode_marked_dead_stones(marked_dead_keys: Array) -> Dictionary:
-	var dead_stones: Dictionary = {}
-	for item in marked_dead_keys:
-		var key: String = String(item)
-		if key == "":
-			continue
-		dead_stones[key] = true
-	return dead_stones
-
-
-func _coords_from_value(raw_coords) -> Array:
-	var coords: Array = []
-	if typeof(raw_coords) != TYPE_ARRAY:
-		return coords
-	for raw_coord in raw_coords:
-		var coord = _coord_from_value(raw_coord)
-		if coord != null:
-			coords.append(coord)
-	return coords
-
-
-func _coord_from_value(raw_coord):
-	if raw_coord == null:
-		return null
-	if raw_coord is HexCoordRef:
-		return raw_coord.duplicated()
-	if raw_coord is Vector2i:
-		return HexCoordRef.new(int(raw_coord.x), int(raw_coord.y))
-	if typeof(raw_coord) == TYPE_ARRAY and raw_coord.size() >= 2:
-		return HexCoordRef.new(int(raw_coord[0]), int(raw_coord[1]))
-	if typeof(raw_coord) == TYPE_DICTIONARY and raw_coord.has("q") and raw_coord.has("r"):
-		return HexCoordRef.new(int(raw_coord["q"]), int(raw_coord["r"]))
-	return null
-
-
-func _native_coord_argument(coord) -> Vector2i:
-	var decoded_coord = _coord_from_value(coord)
-	if decoded_coord == null:
-		return Vector2i.ZERO
-	return Vector2i(decoded_coord.q, decoded_coord.r)
-
-
-func _board_from_snapshot(snapshot: Dictionary):
-	var board := HexBoardRef.new()
-	var radius := int(snapshot.get("board_radius", _board_radius))
-	board.initialize(radius)
-	var ordered_coords: Array = snapshot.get("ordered_coords", [])
-	var cells: Array = snapshot.get("cells", [])
-	var limit: int = min(ordered_coords.size(), cells.size())
-	for index in range(limit):
-		var coord = _coord_from_value(ordered_coords[index])
-		if coord == null:
-			continue
-		board.set_cell(coord, int(cells[index]))
-	return board
 
 
 func _local_visible_threats() -> Dictionary:

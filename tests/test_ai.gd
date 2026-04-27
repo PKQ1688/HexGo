@@ -1,9 +1,9 @@
 extends SceneTree
 
-const AIController = preload("res://scripts/ai/AIController.gd")
 const EasyAIStrategy = preload("res://scripts/ai/EasyAIStrategy.gd")
 const HardAIStrategy = preload("res://scripts/ai/HardAIStrategy.gd")
 const MatchConfig = preload("res://scripts/ai/MatchConfig.gd")
+const MatchRuntime = preload("res://scripts/runtime/MatchRuntime.gd")
 const MediumAIStrategy = preload("res://scripts/ai/MediumAIStrategy.gd")
 const GameState = preload("res://scripts/core/GameState.gd")
 const HexBoard = preload("res://scripts/core/HexBoard.gd")
@@ -19,8 +19,10 @@ func _init() -> void:
 func _run() -> void:
 	_test_turn_simulator_consistency()
 	_test_medium_and_hard_ai_prefer_capture()
-	await _test_ai_controller_emits_action_for_ai_turn()
+	_test_ai_strategies_force_pass_after_turn_limit()
+	await _test_match_runtime_emits_action_for_agent_turn()
 	await _test_rl_and_llm_agents_fallback_without_service()
+	await _test_autonomous_match_turn_limit_enters_scoring()
 	await _test_main_human_black_vs_ai_white()
 	await _test_main_ai_black_vs_human_white()
 	print("All AI tests passed.")
@@ -88,9 +90,18 @@ func _test_medium_and_hard_ai_prefer_capture() -> void:
 	_assert(hard_action["type"] == "move" and hard_action["coord"].equals(target), "Hard AI should also prioritize the direct capture.")
 
 
-func _test_ai_controller_emits_action_for_ai_turn() -> void:
+func _test_ai_strategies_force_pass_after_turn_limit() -> void:
+	var board := HexBoard.new()
+	board.initialize(2)
+	var snapshot := _build_snapshot(board, GameState.Player.BLACK, board.all_coords.size() * 6)
+	for strategy in [EasyAIStrategy.new(), MediumAIStrategy.new(), HardAIStrategy.new()]:
+		var action: Dictionary = strategy.choose_action(snapshot)
+		_assert(action.get("type", "") == "pass", "AI strategies should force pass once the autonomous turn limit is reached.")
+
+
+func _test_match_runtime_emits_action_for_agent_turn() -> void:
 	var state := GameState.new()
-	var controller := AIController.new()
+	var controller := MatchRuntime.new()
 	controller.think_delay_min = 0.0
 	controller.think_delay_max = 0.0
 	root.add_child(state)
@@ -107,9 +118,9 @@ func _test_ai_controller_emits_action_for_ai_turn() -> void:
 	})
 	state.setup_game(2)
 	await _await_frames(2)
-	_assert(actions.size() == 1, "AIController should emit one action when an AI turn begins.")
-	_assert(actions[0]["type"] == "move", "AIController should emit a concrete move action when legal moves exist.")
-	_assert(actions[0].has("action_index") and int(actions[0]["action_index"]) >= 0, "AIController should emit a stable action_index for runtime consumers.")
+	_assert(actions.size() == 1, "MatchRuntime should emit one action when an agent turn begins.")
+	_assert(actions[0]["type"] == "move", "MatchRuntime should emit a concrete move action when legal moves exist.")
+	_assert(actions[0].has("action_index") and int(actions[0]["action_index"]) >= 0, "MatchRuntime should emit a stable action_index for runtime consumers.")
 
 	controller.queue_free()
 	state.queue_free()
@@ -119,7 +130,7 @@ func _test_ai_controller_emits_action_for_ai_turn() -> void:
 func _test_rl_and_llm_agents_fallback_without_service() -> void:
 	for agent_type in [MatchConfig.AgentType.RL, MatchConfig.AgentType.LLM]:
 		var state := GameState.new()
-		var controller := AIController.new()
+		var controller := MatchRuntime.new()
 		controller.think_delay_min = 0.0
 		controller.think_delay_max = 0.0
 		root.add_child(state)
@@ -130,26 +141,60 @@ func _test_rl_and_llm_agents_fallback_without_service() -> void:
 			actions.append(action)
 		)
 		controller.configure(state, {
-			"black_agent": MatchConfig.build_agent_spec(agent_type, MatchConfig.AIDifficulty.EASY),
+			"black_agent": MatchConfig.build_agent_spec(agent_type, MatchConfig.AIDifficulty.EASY, {
+				"use_environment": false,
+			}),
 			"white_agent": MatchConfig.build_agent_spec(MatchConfig.AgentType.HUMAN, MatchConfig.AIDifficulty.EASY),
 		})
 		state.setup_game(2)
 		await _await_frames(2)
-		_assert(actions.size() == 1, "%s agent should still produce a move when no endpoint is configured." % MatchConfig.agent_type_label(agent_type))
-		_assert(actions[0]["type"] == "move", "%s fallback should still produce a concrete move action." % MatchConfig.agent_type_label(agent_type))
-		_assert(actions[0].has("action_index"), "%s fallback action should still include action_index." % MatchConfig.agent_type_label(agent_type))
+		_assert(actions.size() == 1, "Remote agent should still produce a move when no endpoint is configured.")
+		_assert(actions[0]["type"] == "move", "Remote fallback should still produce a concrete move action.")
+		_assert(actions[0].has("action_index"), "Remote fallback action should still include action_index.")
 
 		controller.queue_free()
 		state.queue_free()
 		await _await_frames(1)
 
 
+func _test_autonomous_match_turn_limit_enters_scoring() -> void:
+	var state := GameState.new()
+	var controller := MatchRuntime.new()
+	controller.think_delay_min = 0.0
+	controller.think_delay_max = 0.0
+	root.add_child(state)
+	root.add_child(controller)
+
+	var statuses: Array = []
+	controller.agent_status_changed.connect(func(_player: int, status: String) -> void:
+		statuses.append(status)
+	)
+	controller.configure(state, {
+		"rules": {
+			"max_turns": 4,
+		},
+		"black_agent": MatchConfig.build_agent_spec(MatchConfig.AgentType.HEURISTIC, MatchConfig.AIDifficulty.EASY),
+		"white_agent": MatchConfig.build_agent_spec(MatchConfig.AgentType.HEURISTIC, MatchConfig.AIDifficulty.EASY),
+	})
+	state.setup_game(2)
+	await _await_frames(20)
+	_assert(state.phase == GameState.Phase.SCORING, "Autonomous matches should enter scoring when the turn limit is reached.")
+	_assert(state.move_history.size() >= 6, "Turn-limit scoring should append the two forced passes.")
+	_assert(_has_status_containing(statuses, "Turn limit reached"), "Turn-limit scoring should emit a status for UI/runtime consumers.")
+	_assert(state.confirm_scoring(), "Turn-limited scoring should still be confirmable.")
+	_assert(state.phase == GameState.Phase.GAME_OVER, "Confirming turn-limited scoring should end the game.")
+
+	controller.queue_free()
+	state.queue_free()
+	await _await_frames(1)
+
+
 func _test_main_human_black_vs_ai_white() -> void:
 	var scene: PackedScene = load("res://scenes/Main.tscn")
 	var main = scene.instantiate()
 	root.add_child(main)
-	main.ai_controller.think_delay_min = 0.0
-	main.ai_controller.think_delay_max = 0.0
+	main.match_runtime.think_delay_min = 0.0
+	main.match_runtime.think_delay_max = 0.0
 	main.start_match({
 		"black_control": MatchConfig.PlayerControl.HUMAN,
 		"white_control": MatchConfig.PlayerControl.AI,
@@ -169,8 +214,8 @@ func _test_main_ai_black_vs_human_white() -> void:
 	var scene: PackedScene = load("res://scenes/Main.tscn")
 	var main = scene.instantiate()
 	root.add_child(main)
-	main.ai_controller.think_delay_min = 0.0
-	main.ai_controller.think_delay_max = 0.0
+	main.match_runtime.think_delay_min = 0.0
+	main.match_runtime.think_delay_max = 0.0
 	main.start_match({
 		"black_control": MatchConfig.PlayerControl.AI,
 		"white_control": MatchConfig.PlayerControl.HUMAN,
@@ -200,6 +245,13 @@ func _build_snapshot(board: HexBoard, current_player: int, move_count: int) -> D
 func _await_frames(frame_count: int) -> void:
 	for _index in range(frame_count):
 		await process_frame
+
+
+func _has_status_containing(statuses: Array, needle: String) -> bool:
+	for status in statuses:
+		if String(status).contains(needle):
+			return true
+	return false
 
 
 func _assert(condition: bool, message: String) -> void:

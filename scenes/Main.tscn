@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/Board.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/UI/HUD.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/UI/EndGameDialog.tscn" id="5"]
-[ext_resource type="Script" path="res://scripts/ai/AIController.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/runtime/MatchRuntime.gd" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/UI/MatchSetupDialog.tscn" id="7"]
 [ext_resource type="Script" path="res://scripts/render/SceneBackdrop.gd" id="8"]
 
@@ -18,7 +18,7 @@ script = ExtResource("8")
 [node name="GameState" type="Node" parent="."]
 script = ExtResource("2")
 
-[node name="AIController" type="Node" parent="."]
+[node name="MatchRuntime" type="Node" parent="."]
 script = ExtResource("6")
 
 [node name="Board" parent="." instance=ExtResource("3")]

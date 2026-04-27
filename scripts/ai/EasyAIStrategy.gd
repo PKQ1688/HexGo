@@ -11,6 +11,9 @@ func _init() -> void:
 
 
 func choose_action(state_snapshot: Dictionary) -> Dictionary:
+	if AIHeuristicsRef.should_force_pass(state_snapshot):
+		return {"type": "pass"}
+
 	var ranked: Array = AIHeuristicsRef.rank_place_actions(state_snapshot)
 	if ranked.is_empty():
 		return {"type": "pass"}

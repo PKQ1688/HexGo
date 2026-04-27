@@ -4,6 +4,7 @@ extends Control
 signal start_requested(match_config)
 
 const MatchConfigRef = preload("res://scripts/ai/MatchConfig.gd")
+const MatchConfigLabelsRef = preload("res://scripts/ui/MatchConfigLabels.gd")
 
 @onready var description_label: Label = $Overlay/PanelContainer/VBoxContainer/Description
 @onready var black_control: OptionButton = $Overlay/PanelContainer/VBoxContainer/BlackRow/BlackControl
@@ -54,7 +55,7 @@ func _populate_options() -> void:
 	if black_control.item_count > 0:
 		return
 
-	for label: String in MatchConfigRef.agent_type_option_labels():
+	for label: String in MatchConfigLabelsRef.agent_type_option_labels():
 		black_control.add_item(label)
 		white_control.add_item(label)
 

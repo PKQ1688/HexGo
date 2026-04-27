@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://scripts/Board.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/BoardView.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/render/BoardRenderer.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/render/PieceRenderer.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/render/TerritoryRenderer.gd" id="4"]
