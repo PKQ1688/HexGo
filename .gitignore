@@ -5,5 +5,10 @@
 *.uid
 *.import
 native/*.gdextension
-.aider*
 .qwen/
+native/eval-results/
+.env
+.venv-aider/
+.aider*
+# !.aider.conf.yml
+docs/

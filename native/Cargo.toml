@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
 	"crates/hexgo-core",
+	"crates/hexgo-eval",
 	"crates/hexgo-godot",
 	"crates/hexgo-py",
 ]
