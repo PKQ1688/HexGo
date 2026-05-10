@@ -373,13 +373,19 @@ impl OpenAiAgentClient {
                 })?;
         }
 
-        let output = child
-            .wait_with_output()
-            .await
-            .map_err(|error| ChatRequestError {
+        let output = match timeout(self.config.timeout, child.wait_with_output()).await {
+            Ok(result) => result.map_err(|error| ChatRequestError {
                 retryable: true,
                 message: format!("curl chat completion request failed: {error}"),
-            });
+            }),
+            Err(_) => Err(ChatRequestError {
+                retryable: true,
+                message: format!(
+                    "curl chat completion timed out after {} seconds",
+                    self.config.timeout.as_secs()
+                ),
+            }),
+        };
         let _ = fs::remove_file(&body_path);
         let output = output?;
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1466,7 +1472,8 @@ fn user_prompt(
         "strategy_hints": [
             "Prefer captures, high-liberty moves, central influence in the opening, and moves that connect friendly groups.",
             "Avoid low-liberty moves unless they capture or save a group.",
-            "Do not pass while candidate moves exist."
+            "Do not pass early.",
+            "If a pass candidate appears late and you are ahead or no move clearly improves score, passing can be best because two consecutive passes end the game."
         ],
         "rules_summary": [
             "HexGo uses axial hex coordinates (q,r) on the listed radius board.",
@@ -1624,15 +1631,12 @@ fn candidate_actions_for_prompt(observation: &Observation, limit: usize) -> Vec<
         .map(|(_, _, value)| value)
         .collect::<Vec<_>>();
 
-    if should_include_pass_candidate(observation, candidates.is_empty())
-        && observation
-            .legal_action_indices
-            .contains(&observation.pass_action_index)
-    {
+    if let Some(pass_score) = pass_candidate_score(observation, candidates.is_empty()) {
         candidates.push(json!({
             "action_index": observation.pass_action_index,
             "type": "pass",
-            "score": -9999.0,
+            "score": pass_score,
+            "endgame_hint": "Pass can be correct in the endgame, especially when ahead or after opponent pass.",
         }));
     }
     candidates
@@ -1718,12 +1722,47 @@ fn score_candidate_move(
     }
 }
 
-fn should_include_pass_candidate(observation: &Observation, no_move_candidates: bool) -> bool {
-    if no_move_candidates {
-        return true;
+fn pass_candidate_score(observation: &Observation, no_move_candidates: bool) -> Option<f64> {
+    if !observation
+        .legal_action_indices
+        .contains(&observation.pass_action_index)
+    {
+        return None;
     }
     let total_cells = observation.ordered_coords.len().max(1);
-    observation.consecutive_passes > 0 || observation.move_count >= total_cells * 3 / 4
+    if no_move_candidates {
+        return Some(10_000.0);
+    }
+
+    let own_score = score_for_player(observation.scores, observation.current_player);
+    let opponent_score = score_for_player(observation.scores, observation.current_player.other());
+    let margin = own_score - opponent_score;
+    let progress = observation.move_count as f64 / total_cells as f64;
+
+    if observation.consecutive_passes > 0 {
+        return Some(if margin >= 0 {
+            800.0
+        } else {
+            80.0 + margin as f64
+        });
+    }
+    if progress >= 0.90 {
+        return Some(240.0 + margin as f64 * 4.0);
+    }
+    if progress >= 0.75 {
+        return Some(90.0 + margin as f64 * 3.0);
+    }
+    if progress >= 0.60 && margin > 4 {
+        return Some(45.0 + margin as f64 * 2.0);
+    }
+    None
+}
+
+fn score_for_player(scores: ScoreTotals, player: Player) -> i32 {
+    match player {
+        Player::Black => scores.black as i32,
+        Player::White => scores.white as i32,
+    }
 }
 
 fn board_map_from_observation(observation: &Observation) -> HashMap<Coord, i32> {
@@ -2263,7 +2302,7 @@ mod tests {
             &agent,
             Player::Black,
             &observation,
-            Duration::from_secs(1),
+            Duration::from_secs(5),
             16,
         )
         .await
