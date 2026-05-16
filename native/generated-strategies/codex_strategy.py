@@ -99,6 +99,18 @@ def territory_hint(board, player, radius):
     return total
 
 
+def adjacent_groups(board, move, color, radius):
+    groups = []
+    seen = set()
+    for nxt in neighbors(move, radius):
+        if board.get(nxt) != color or nxt in seen:
+            continue
+        group, libs = group_and_liberties(board, nxt, radius)
+        seen |= group
+        groups.append((group, libs))
+    return groups
+
+
 def own_eye_like(board, move, player, radius):
     opp = other(player)
     own = 0
@@ -115,9 +127,24 @@ def own_eye_like(board, move, player, radius):
     return own >= 4 and opp_count == 0 and open_count <= 1
 
 
+def reply_capture_risk(after, own_group, own_libs, opp, radius):
+    if len(own_libs) > 2:
+        return 0
+
+    risk = 0
+    for liberty in own_libs:
+        if after.get(liberty) is not None:
+            continue
+        _, captured, _, _ = simulate(after, liberty, opp, radius)
+        if captured & own_group:
+            risk = max(risk, len(captured & own_group))
+    return risk
+
+
 def score_move(action, board, player, radius, move_count, current_margin):
     move = (int(action["q"]), int(action["r"]))
     opp = other(player)
+    friendly_groups = adjacent_groups(board, move, player, radius)
     after, captured, own_group, own_libs = simulate(board, move, player, radius)
     liberties = len(own_libs)
     capture_count = len(captured)
@@ -131,8 +158,8 @@ def score_move(action, board, player, radius, move_count, current_margin):
         if state == player:
             friendly_neighbors += 1
             group, libs = group_and_liberties(board, nxt, radius)
-            if move in libs and len(libs) <= 2:
-                rescue += len(group)
+            if move in libs and len(libs) <= 2 and liberties > len(libs):
+                rescue += len(group) * (liberties - len(libs))
         elif state == opp:
             enemy_neighbors += 1
             group, libs = group_and_liberties(board, nxt, radius)
@@ -149,7 +176,8 @@ def score_move(action, board, player, radius, move_count, current_margin):
     score += capture_count * 120.0
     score += pressure * 7.0
     score += rescue * 8.0
-    score += liberties * 9.0
+    score += min(liberties, 8) * 10.0
+    score += max(0, min(liberties - 8, 8)) * 2.0
     score += min(len(own_group), 6) * 4.0
     score += friendly_neighbors * 8.0
     score += enemy_neighbors * 2.0
@@ -157,15 +185,25 @@ def score_move(action, board, player, radius, move_count, current_margin):
 
     before_hint = territory_hint(board, player, radius)
     after_hint = territory_hint(after, player, radius)
+    before_opp_hint = territory_hint(board, opp, radius)
+    after_opp_hint = territory_hint(after, opp, radius)
     score += (after_hint - before_hint) * 4.0
+    score += (before_opp_hint - after_opp_hint) * 4.5
 
     if capture_count == 0 and liberties <= 1:
-        score -= 260.0
+        score -= 600.0 + len(own_group) * 18.0
     elif capture_count == 0 and liberties == 2:
-        score -= 35.0
+        score -= 70.0 + max(0, len(own_group) - 4) * 3.0
+
+    risk = reply_capture_risk(after, own_group, own_libs, opp, radius)
+    if capture_count == 0 and risk:
+        score -= 180.0 + risk * 28.0
 
     if own_eye_like(board, move, player, radius) and capture_count == 0:
-        score -= 120.0
+        score -= 180.0
+
+    if friendly_groups and capture_count == 0 and liberties <= max((len(libs) for _, libs in friendly_groups), default=0):
+        score -= 40.0
 
     if friendly_neighbors == 0 and enemy_neighbors == 0 and move_count > radius * 4:
         score -= 12.0
@@ -174,7 +212,7 @@ def score_move(action, board, player, radius, move_count, current_margin):
         score += capture_count * 20.0 + enemy_neighbors * 1.5
 
     score += (move[0] * 0.013) + (move[1] * 0.007)
-    return score, capture_count, liberties, friendly_neighbors, pressure
+    return score, capture_count, liberties, friendly_neighbors, pressure, risk
 
 
 def main():
@@ -183,6 +221,7 @@ def main():
     state = request.get("state", {})
     radius = int(state.get("board_radius", 1))
     move_count = int(state.get("move_count", 0))
+    consecutive_passes = int(state.get("consecutive_passes", 0))
     pass_index = int(request.get("pass_action_index", state.get("pass_action_index", -1)))
     scores = state.get("scores", {})
     current_margin = int(scores.get(player, 0)) - int(scores.get(other(player), 0))
@@ -200,17 +239,24 @@ def main():
 
     best = None
     for action in moves:
-        score, captures, libs, friends, pressure = score_move(
+        score, captures, libs, friends, pressure, risk = score_move(
             action, board, player, radius, move_count, current_margin
         )
         key = (score, captures, libs, friends, -dist((int(action["q"]), int(action["r"]))))
         if best is None or key > best[0]:
-            best = (key, action, score, captures, libs, friends, pressure)
+            best = (key, action, score, captures, libs, friends, pressure, risk)
 
-    _, action, score, captures, libs, friends, pressure = best
+    _, action, score, captures, libs, friends, pressure, risk = best
+    if consecutive_passes > 0 and current_margin > 0 and pass_index >= 0:
+        print(json.dumps({
+            "action_index": pass_index,
+            "reason": f"ahead by {current_margin} after opponent pass; double-pass to settle"
+        }))
+        return
+
     reason = (
         f"score={score:.1f} cap={captures} libs={libs} "
-        f"friends={friends} pressure={pressure}"
+        f"friends={friends} pressure={pressure} risk={risk}"
     )
     print(json.dumps({"action_index": int(action["action_index"]), "reason": reason}))
 
